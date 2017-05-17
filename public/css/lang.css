@@ -1,0 +1,36 @@
+/* Overrides to spruce up the site */
+
+ul.post-list {
+    list-style-type: none;
+    padding:0;
+}
+
+.sidebar .copy {
+    font-size:80%;
+}
+
+.label {
+  display: inline;
+  padding: .2em .6em .3em;
+  font-size: 75%;
+  font-weight: bold;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25em;
+  margin: 0;
+  background-color: #7fcaff
+  ;
+
+}
+a.label:hover,
+a.label:focus {
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+}
+.label:empty {
+  display: none;
+}
