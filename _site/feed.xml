@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000//feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000//" rel="alternate" type="text/html" /><updated>2017-05-17T11:54:59+01:00</updated><id>http://localhost:4000//</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Pulling Jekyll teeth on the Windows Subsystem for Linux</title><link href="http://localhost:4000//jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth/" rel="alternate" type="text/html" title="Pulling Jekyll teeth on the Windows Subsystem for Linux" /><published>2017-05-16T16:00:00+01:00</published><updated>2017-05-16T16:00:00+01:00</updated><id>http://localhost:4000//jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth</id><content type="html" xml:base="http://localhost:4000//jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth/">&lt;p&gt;As I use more open source frameworks and tools, I’ve found that I’ve been writing down documentation that isn’t just useful to business. So I decided to start a new dev blog. I checked out Wordpress and I’ve used Blogger before but I decided that static pages were the way to go, using the excellent &lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub pages&lt;/a&gt;.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-05-17T12:29:02+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Pulling Jekyll teeth on the Windows Subsystem for Linux</title><link href="http://localhost:4000/jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth/" rel="alternate" type="text/html" title="Pulling Jekyll teeth on the Windows Subsystem for Linux" /><published>2017-05-16T16:00:00+01:00</published><updated>2017-05-16T16:00:00+01:00</updated><id>http://localhost:4000/jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth</id><content type="html" xml:base="http://localhost:4000/jekyll/hyde/ubuntu/2017/05/16/pulling-jekyll-teeth/">&lt;p&gt;As I use more open source frameworks and tools, I’ve found that I’ve been writing down documentation that isn’t just useful to business. So I decided to start a new dev blog. I checked out Wordpress and I’ve used Blogger before but I decided that static pages were the way to go, using the excellent &lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub pages&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;GitHub will host your pages for you, all you have to do is go through the steps on the &lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub pages&lt;/a&gt; site, clone the repo locally, add your web pages, push them back up and off you go. In the simplest form, that’s very neat but it suffers from the problem that the blog posts are all mixed up with the markup. If you want to change the look and feel of your site, you’re stuck.&lt;/p&gt;
 
@@ -28,9 +28,9 @@
 &lt;h2 id=&quot;installing-jekyll&quot;&gt;Installing Jekyll&lt;/h2&gt;
 &lt;p&gt;Naively, I put in the first command:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ gem install jekyll bundler
-ERROR:  While executing gem ... (Gem::FilePermissionError)
-    You don&amp;#39;t have write permissions into the /var/lib/gems/1.9.1 directory.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ gem install jekyll bundler
+ERROR:  While executing gem ... &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Gem::FilePermissionError&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    You don&lt;span class=&quot;err&quot;&gt;&amp;#39;&lt;/span&gt;t have write permissions into the /var/lib/gems/1.9.1 directory.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Firstly, I notice that it’s trying to install to the gems directory of 1.9.1. Is that the Ruby version or the gems version?I went hunting and found that I didn’t have the &lt;a href=&quot;https://jekyllrb.com/docs/installation/#requirements&quot;&gt;requirements&lt;/a&gt;:&lt;/p&gt;
 
@@ -43,28 +43,28 @@ ERROR:  While executing gem ... (Gem::FilePermissionError)
 
 &lt;p&gt;Ah, so my Linux distro isn’t complete enough. I start off by installing &lt;a href=&quot;https://gcc.gnu.org/&quot;&gt;GCC&lt;/a&gt; and Make.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install gcc
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;sudo apt-get install gcc
 sudo apt-get install make&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;It seems odd that Jekyll needs a compiler and make tool to work. Jekyll assured me that this is easy, so I kept going. So, I noticed that I needed Ruby 2.0, so what version do I have?&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Which gives:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ruby 1.9.3p484 (2013-11-22 revision 43786) [x86_64-linux]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;ruby &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.9.3p484 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2013&lt;/span&gt;-11-22 revision &lt;span class=&quot;m&quot;&gt;43786&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;x86_64-linux&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;OK, so that’s out of date. I’ll update:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ sudo apt-get install ruby
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ sudo apt-get install ruby
 Reading package lists... Done
 Building dependency tree
 Reading state information... Done
 ruby is already the newest version.
 The following packages were automatically installed and are no longer required:
   fgetty os-prober
-Use &amp;#39;apt-get autoremove&amp;#39; to remove them.
-0 to upgrade, 0 to newly install, 0 to remove and 144 not to upgrade.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+Use &lt;span class=&quot;s1&quot;&gt;&amp;#39;apt-get autoremove&amp;#39;&lt;/span&gt; to remove them.
+&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to upgrade, &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to newly install, &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to remove and &lt;span class=&quot;m&quot;&gt;144&lt;/span&gt; not to upgrade.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Already the newest version, eh? I think not! It’s over to the &lt;a href=&quot;https://www.ruby-lang.org/en/documentation/installation/#apt&quot;&gt;Ruby Install&lt;/a&gt; page. However Ubuntu’s &lt;code&gt;apt-get&lt;/code&gt; will only get you as far as version 1.9.3. So how do you get Ruby 2 on Ubuntu 14.04. That sounds like a Stack Overflow question, &lt;a href=&quot;http://stackoverflow.com/q/26595620/328730&quot;&gt;which it is&lt;/a&gt;.&lt;/p&gt;
 
@@ -74,20 +74,20 @@ Use &amp;#39;apt-get autoremove&amp;#39; to remove them.
 
 &lt;p&gt;&lt;a href=&quot;http://stackoverflow.com/a/26595869/328730&quot;&gt;From Stack Overflow answer:&lt;/a&gt;&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get update
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;sudo apt-get update
 sudo apt-get install git-core curl zlib1g-dev build-essential libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev python-software-properties libffi-dev
 
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-echo &amp;#39;export PATH=&amp;quot;$HOME/.rbenv/bin:$PATH&amp;quot;&amp;#39; &amp;gt;&amp;gt; ~/.bashrc
-echo &amp;#39;eval &amp;quot;$(rbenv init -)&amp;quot;&amp;#39; &amp;gt;&amp;gt; ~/.bashrc
-exec $SHELL
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;export PATH=&amp;quot;$HOME/.rbenv/bin:$PATH&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;eval &amp;quot;$(rbenv init -)&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;exec&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$SHELL&lt;/span&gt;
 
 git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-echo &amp;#39;export PATH=&amp;quot;$HOME/.rbenv/plugins/ruby-build/bin:$PATH&amp;quot;&amp;#39; &amp;gt;&amp;gt; ~/.bashrc
-exec $SHELL
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;export PATH=&amp;quot;$HOME/.rbenv/plugins/ruby-build/bin:$PATH&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;exec&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$SHELL&lt;/span&gt;
 
-rbenv install --verbose 2.4.1
-rbenv global 2.4.1
+rbenv install --verbose &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;.4.1
+rbenv global &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;.4.1
 ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;&lt;code&gt;rbenv install&lt;/code&gt; took several minutes. I added the &lt;code&gt;--verbose&lt;/code&gt; switch so that I could see it going (others &lt;a href=&quot;http://stackoverflow.com/q/23944406/328730&quot;&gt;had thought it had hung&lt;/a&gt;). The last command &lt;code&gt;ruby -v&lt;/code&gt; gives me &lt;code&gt;ruby 2.4.1p111 (2017-03-22 revision 58053) [x86_64-linux]&lt;/code&gt;, which is a relief!&lt;/p&gt;
@@ -98,12 +98,12 @@ ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;We have the pre-requisites installed, now to try installing Jekyll and &lt;a href=&quot;http://bundler.io/&quot;&gt;bundler&lt;/a&gt;. Bundler is a way to manage your Ruby gems, a Ruby gem being a library. It works off a Gemfile that greatly simplifies the inclusion and management of Ruby gems.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ gem install jekyll bundler
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ gem install jekyll bundler
 $ jekyll new my-awesome-site&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;This worked! I now had Jekyll ready to go. To build and run the site, go to the directory where your Jekyll site is and type:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;h2 id=&quot;theming&quot;&gt;Theming&lt;/h2&gt;
 
@@ -111,10 +111,10 @@ $ jekyll new my-awesome-site&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Once you have the theme down, make sure you use bundler to get the gems that the theme needs.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ bundler&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ bundler&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;When that completes, run:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;It will tell you the port it’s chosen. On WSL, you need to remember that it shares ports with Windows, so you might get a port conflict if you have other sites running elsewhere.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">As I use more open source frameworks and tools, I’ve found that I’ve been writing down documentation that isn’t just useful to business. So I decided to start a new dev blog. I checked out Wordpress and I’ve used Blogger before but I decided that static pages were the way to go, using the excellent GitHub pages.</summary></entry></feed>
