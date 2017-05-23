@@ -1,5 +1,73 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-05-17T14:16:20+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">A .NET codger getting into Linux on Windows</title><link href="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/" rel="alternate" type="text/html" title="A .NET codger getting into Linux on Windows" /><published>2017-05-17T12:35:00+01:00</published><updated>2017-05-17T12:35:00+01:00</updated><id>http://localhost:4000/linux/wsl/2017/05/17/linux-wsl</id><content type="html" xml:base="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/">&lt;p&gt;Running .NET through Visual Studio with Microsoft SQL Server and onto a Windows Server instance has been that comfortable jumper for many years. As much as the landscape changed from Web Forms to MVC, stored procedures to Entity Framework, you still had that sense of familiarity that Microsoft won’t let you down. That rubber stamp of Microsoft quality has been an easy sell. You could say:&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-05-23T13:28:41+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">.NET running on a Linux docker container</title><link href="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/" rel="alternate" type="text/html" title=".NET running on a Linux docker container" /><published>2017-05-23T13:00:00+01:00</published><updated>2017-05-23T13:00:00+01:00</updated><id>http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet</id><content type="html" xml:base="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/">&lt;p&gt;In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot.&lt;/p&gt;
+
+&lt;h2 id=&quot;pre-requisites&quot;&gt;Pre-requisites&lt;/h2&gt;
+&lt;p&gt;You might find alternatives to these tools but they are the ones that my team and I use. Before you install, make sure you &lt;a href=&quot;https://docs.docker.com/docker-for-windows/install/#what-to-know-before-you-install&quot;&gt;understand the caveats from docker&lt;/a&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Windows 10 Pro x64, Microsoft Hyper-V&lt;/li&gt;
+  &lt;li&gt;Visual Studio 2017&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;install-docker-for-windows&quot;&gt;Install Docker for Windows&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://docs.docker.com/docker-for-windows/install/#download-docker-for-windows&quot;&gt;Download Docker for Windows&lt;/a&gt; I recommend the stable channel. I used the defaults for everything, I suggest you do too!&lt;/p&gt;
+
+&lt;p&gt;Once docker for Windows is installed, find the docker whale icon in the status bar right click and choose &lt;code&gt;Settings...&lt;/code&gt;. On the left of the settings window, choose &lt;code&gt;Shared Drives&lt;/code&gt; and tick the box for &lt;code&gt;C:&lt;/code&gt;. This will give the docker machine access to the files on the &lt;code&gt;C:&lt;/code&gt; drive, which is doesn’t have by default.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/docker-settings-share-drive.png&quot; alt=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;why-did-i-need-hyper-v&quot;&gt;Why did I need Hyper-V?&lt;/h2&gt;
+&lt;p&gt;That was a question I found myself asking at first. Where Docker is the application that is running in your system tray, the virtual machine that hosts the actual docker container is in Hyper-V. Let’s have a look at that.&lt;/p&gt;
+
+&lt;p&gt;In Windows hit the windows key and type &lt;code&gt;Hyper-V&lt;/code&gt; to get the Hyper-V Manager. You’ll see this:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/hyper-v-docker.png&quot; alt=&quot;The Hyper-V manager with one VM running&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;There’s only one Virtual Machine (VM) running called &lt;strong&gt;MobyLinuxVM&lt;/strong&gt;. It’s called Moby because docker is now a trademark used by the support company and &lt;a href=&quot;https://blog.docker.com/2017/04/introducing-the-moby-project/&quot;&gt;Moby&lt;/a&gt; is the name given to the open source bit. Moby Linux is an alpine distro of Linux with addition to allow communication between the virtual machine and Hyper-V.&lt;/p&gt;
+
+&lt;p&gt;The default IP of the docker host virtual machine is 10.0.75.1. That will come in useful later.&lt;/p&gt;
+
+&lt;h2 id=&quot;new-aspnet-core-project&quot;&gt;New ASP.NET Core Project&lt;/h2&gt;
+&lt;p&gt;Open up Visual Studio 2017 and create an ASP.NET Core Web Application. Select &lt;code&gt;Enable Docker Support&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/aspnet-core-with-docker.png&quot; alt=&quot;Creating a new ASP.NET Core project with docker support&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Once complete, you can run it straight away by pressing F5. You’ll notice that the output window from the build has lots more output in it. That’s the docker compose system.&lt;/p&gt;
+
+&lt;p&gt;If you need to add docker support to an existing solution, you can do that by adding the docker compose project&lt;/p&gt;
+
+&lt;h2 id=&quot;target-process-exited-without-raising-a-coreclr-started-event&quot;&gt;Target process exited without raising a CoreCLR started event&lt;/h2&gt;
+&lt;p&gt;At first I saw this:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/aspnet-core-with-docker.png&quot; alt=&quot;Process exited without raising a CoreCLR started event&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;In Visual Studio check the Debug output window for the reason why:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;realpath(): Invalid argument
+The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found.
+  - Check application dependencies and target a framework version installed at: /usr/share/dotnet/shared/Microsoft.NETCore.App
+  - The following versions are installed:
+  1.1.1
+  - Alternatively, install the framework version '1.1.2'.
+The program '' has exited with code 131 (0x83).
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Installing the latest version of .NET Core will solve this problem but why is it happening? Let’s look at…&lt;/p&gt;
+
+&lt;h2 id=&quot;the-dockerfile&quot;&gt;The Dockerfile&lt;/h2&gt;
+&lt;p&gt;In your ASP.NET Core project you’ll find a Dockerfile (no file extension). The Dockerfile is a build file for creating a docker image. Each line is a command. It will look a little like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM microsoft/aspnetcore:1.1
+ARG source
+WORKDIR /app
+EXPOSE 80
+COPY ${source:-obj/Docker/publish} .
+ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The first line &lt;code&gt;microsoft/aspnetcore:1.1&lt;/code&gt; is the base image. The name breaks down as &lt;code&gt;[maintainer]/[image]:[tag]&lt;/code&gt;. So this is an image that’s maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the &lt;a href=&quot;https://hub.docker.com/r/microsoft/aspnetcore/&quot;&gt;Docker Hub page for this image&lt;/a&gt;. You can use &lt;code&gt;FROM microsoft/aspnetcore:latest&lt;/code&gt; to get yourself running. (&lt;a href=&quot;https://stackoverflow.com/questions/44134429/why-does-latest-aspnet-core-docker-image-run-when-the-tag-1-1-fails&quot;&gt;I’ve started a Stack Overflow question to understand why&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;Run the solution again and a browser window will open with the default ASP.NET Core project being shown. .NET is now running in a Linux docker container on a Linux host.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot. Pre-requisites You might find alternatives to these tools but they are the ones that my team and I use. Before you install, make sure you understand the caveats from docker. Windows 10 Pro x64, Microsoft Hyper-V Visual Studio 2017 Install Docker for Windows Download Docker for Windows I recommend the stable channel. I used the defaults for everything, I suggest you do too! Once docker for Windows is installed, find the docker whale icon in the status bar right click and choose Settings.... On the left of the settings window, choose Shared Drives and tick the box for C:. This will give the docker machine access to the files on the C: drive, which is doesn’t have by default. Why did I need Hyper-V? That was a question I found myself asking at first. Where Docker is the application that is running in your system tray, the virtual machine that hosts the actual docker container is in Hyper-V. Let’s have a look at that. In Windows hit the windows key and type Hyper-V to get the Hyper-V Manager. You’ll see this: There’s only one Virtual Machine (VM) running called MobyLinuxVM. It’s called Moby because docker is now a trademark used by the support company and Moby is the name given to the open source bit. Moby Linux is an alpine distro of Linux with addition to allow communication between the virtual machine and Hyper-V. The default IP of the docker host virtual machine is 10.0.75.1. That will come in useful later. New ASP.NET Core Project Open up Visual Studio 2017 and create an ASP.NET Core Web Application. Select Enable Docker Support. Once complete, you can run it straight away by pressing F5. You’ll notice that the output window from the build has lots more output in it. That’s the docker compose system. If you need to add docker support to an existing solution, you can do that by adding the docker compose project Target process exited without raising a CoreCLR started event At first I saw this: In Visual Studio check the Debug output window for the reason why: realpath(): Invalid argument The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found. - Check application dependencies and target a framework version installed at: /usr/share/dotnet/shared/Microsoft.NETCore.App - The following versions are installed: 1.1.1 - Alternatively, install the framework version '1.1.2'. The program '' has exited with code 131 (0x83). Installing the latest version of .NET Core will solve this problem but why is it happening? Let’s look at… The Dockerfile In your ASP.NET Core project you’ll find a Dockerfile (no file extension). The Dockerfile is a build file for creating a docker image. Each line is a command. It will look a little like this: FROM microsoft/aspnetcore:1.1 ARG source WORKDIR /app EXPOSE 80 COPY ${source:-obj/Docker/publish} . ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;] The first line microsoft/aspnetcore:1.1 is the base image. The name breaks down as [maintainer]/[image]:[tag]. So this is an image that’s maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the Docker Hub page for this image. You can use FROM microsoft/aspnetcore:latest to get yourself running. (I’ve started a Stack Overflow question to understand why). Run the solution again and a browser window will open with the default ASP.NET Core project being shown. .NET is now running in a Linux docker container on a Linux host.</summary></entry><entry><title type="html">A .NET codger getting into Linux on Windows</title><link href="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/" rel="alternate" type="text/html" title="A .NET codger getting into Linux on Windows" /><published>2017-05-17T12:35:00+01:00</published><updated>2017-05-17T12:35:00+01:00</updated><id>http://localhost:4000/linux/wsl/2017/05/17/linux-wsl</id><content type="html" xml:base="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/">&lt;p&gt;Running .NET through Visual Studio with Microsoft SQL Server and onto a Windows Server instance has been that comfortable jumper for many years. As much as the landscape changed from Web Forms to MVC, stored procedures to Entity Framework, you still had that sense of familiarity that Microsoft won’t let you down. That rubber stamp of Microsoft quality has been an easy sell. You could say:&lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;We’re a Microsoft shop&lt;/p&gt;
