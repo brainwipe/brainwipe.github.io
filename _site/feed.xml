@@ -1,5 +1,61 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-05-23T13:28:41+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">.NET running on a Linux docker container</title><link href="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/" rel="alternate" type="text/html" title=".NET running on a Linux docker container" /><published>2017-05-23T13:00:00+01:00</published><updated>2017-05-23T13:00:00+01:00</updated><id>http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet</id><content type="html" xml:base="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/">&lt;p&gt;In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-06-19T12:08:16+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">DataGrip - File not found when connecting to LocalDB</title><link href="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/" rel="alternate" type="text/html" title="DataGrip - File not found when connecting to LocalDB" /><published>2017-06-19T09:50:00+01:00</published><updated>2017-06-19T09:50:00+01:00</updated><id>http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect</id><content type="html" xml:base="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/">&lt;p&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/sqlexpress/2011/07/12/introducing-localdb-an-improved-sql-express/&quot;&gt;Local DB&lt;/a&gt; is a lightweight replacement to SQL Express that is installed as part of Visual Studio. It’s free, 100% compatible with SQL Server, runs on database up to 10GB of data and you can connect using a connection string.&lt;/p&gt;
+
+&lt;h2 id=&quot;datagrip&quot;&gt;DataGrip&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.jetbrains.com/datagrip/&quot;&gt;DataGrip&lt;/a&gt; is a relational database management tool by JetBrains. I’ve found it easier to use for SQL Server, Postgres and MySQL than dedicated tools. Being able to switch tabs, set themes and compare output in a single UI has been really useful on projects where I need to use more than one database engine. It’s not free but there is a 30 day trial, which I urge you to try. Here’s what my UI looks like, setup how I like it:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/datagrip-sqlserver.png&quot; alt=&quot;DataGrip themed how I like it&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;an-error-connecting-to-local-db&quot;&gt;An error connecting to Local DB&lt;/h2&gt;
+&lt;p&gt;When &lt;a href=&quot;https://blog.jetbrains.com/datagrip/2016/10/07/connecting-datagrip-to-sql-server-express-localdb/&quot;&gt;connecting to LocalDB&lt;/a&gt; I often receive the error:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$&amp;lt;pipe name&amp;gt;\sql\query (The system cannot find the file specified)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It also fails in the Test Connection window.&lt;/p&gt;
+
+&lt;h2 id=&quot;localdb-is-not-running&quot;&gt;LocalDB is not running!&lt;/h2&gt;
+&lt;p&gt;LocalDB is significantly different to SQL Server Express in that it is very lightweight and &lt;em&gt;does not run as a service&lt;/em&gt;. It can be started and stopped when needed. What the error above is telling us is that LocalDB has not been started. If you use Visual Studio SQL Server Object Explorer, then the database will appear to be there because Visual Studio know that it needs to run LocalDB. DataGrip doesn’t have a concept of starting LocalDB. Viewing the LocalDB in Visual Studio will solve the DataGrip error because LocalDB will now be running.&lt;/p&gt;
+
+&lt;h2 id=&quot;command-line-with-localdb&quot;&gt;Command Line with LocalDB&lt;/h2&gt;
+&lt;p&gt;LocalDB &lt;a href=&quot;https://docs.microsoft.com/en-us/sql/relational-databases/express-localdb-instance-apis/command-line-management-tool-sqllocaldb-exe&quot;&gt;comes with a command line&lt;/a&gt; called &lt;code&gt;SqlLocalDB.exe&lt;/code&gt; that can be used from your Windows command prompt.&lt;/p&gt;
+
+&lt;p&gt;Find out what your instances are:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i
+MSSQLLocalDB
+ProjectsV12
+ProjectsV13
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Get detailed information for an instance:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i projectsv13
+Name:               ProjectsV13
+Version:            13.0.1601.5
+Shared name:
+Owner:              MyPCName\Rob
+Auto-create:        No
+State:              Running
+Last start time:    19/06/2017 11:59:28
+Instance pipe name: np:\\.\pipe\LOCALDB#C2BC2C23\tsql\query
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Note that the state there is “Running”.&lt;/p&gt;
+
+&lt;p&gt;Stop a Local DB instance:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb stop projectsv13
+LocalDB instance &quot;ProjectsV13&quot; stopped.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Start a local DB instance:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb start projectsv13
+LocalDB instance &quot;ProjectsV13&quot; started. 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That is the command line way to rid yourself of the DataGrip problem.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">Local DB is a lightweight replacement to SQL Express that is installed as part of Visual Studio. It’s free, 100% compatible with SQL Server, runs on database up to 10GB of data and you can connect using a connection string. DataGrip DataGrip is a relational database management tool by JetBrains. I’ve found it easier to use for SQL Server, Postgres and MySQL than dedicated tools. Being able to switch tabs, set themes and compare output in a single UI has been really useful on projects where I need to use more than one database engine. It’s not free but there is a 30 day trial, which I urge you to try. Here’s what my UI looks like, setup how I like it: An error connecting to Local DB When connecting to LocalDB I often receive the error: [2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$&amp;lt;pipe name&amp;gt;\sql\query (The system cannot find the file specified) It also fails in the Test Connection window. LocalDB is not running! LocalDB is significantly different to SQL Server Express in that it is very lightweight and does not run as a service. It can be started and stopped when needed. What the error above is telling us is that LocalDB has not been started. If you use Visual Studio SQL Server Object Explorer, then the database will appear to be there because Visual Studio know that it needs to run LocalDB. DataGrip doesn’t have a concept of starting LocalDB. Viewing the LocalDB in Visual Studio will solve the DataGrip error because LocalDB will now be running. Command Line with LocalDB LocalDB comes with a command line called SqlLocalDB.exe that can be used from your Windows command prompt. Find out what your instances are: C:\&amp;gt;sqllocaldb i MSSQLLocalDB ProjectsV12 ProjectsV13 Get detailed information for an instance: C:\&amp;gt;sqllocaldb i projectsv13 Name: ProjectsV13 Version: 13.0.1601.5 Shared name: Owner: MyPCName\Rob Auto-create: No State: Running Last start time: 19/06/2017 11:59:28 Instance pipe name: np:\\.\pipe\LOCALDB#C2BC2C23\tsql\query Note that the state there is “Running”. Stop a Local DB instance: C:\&amp;gt;sqllocaldb stop projectsv13 LocalDB instance &quot;ProjectsV13&quot; stopped. Start a local DB instance: C:\&amp;gt;sqllocaldb start projectsv13 LocalDB instance &quot;ProjectsV13&quot; started. That is the command line way to rid yourself of the DataGrip problem.</summary></entry><entry><title type="html">.NET running on a Linux docker container</title><link href="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/" rel="alternate" type="text/html" title=".NET running on a Linux docker container" /><published>2017-05-23T13:00:00+01:00</published><updated>2017-05-23T13:00:00+01:00</updated><id>http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet</id><content type="html" xml:base="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/">&lt;p&gt;In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot.&lt;/p&gt;
 
 &lt;h2 id=&quot;pre-requisites&quot;&gt;Pre-requisites&lt;/h2&gt;
 &lt;p&gt;You might find alternatives to these tools but they are the ones that my team and I use. Before you install, make sure you &lt;a href=&quot;https://docs.docker.com/docker-for-windows/install/#what-to-know-before-you-install&quot;&gt;understand the caveats from docker&lt;/a&gt;.&lt;/p&gt;
