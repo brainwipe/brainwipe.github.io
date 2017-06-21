@@ -1,5 +1,110 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-06-19T12:08:16+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">DataGrip - File not found when connecting to LocalDB</title><link href="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/" rel="alternate" type="text/html" title="DataGrip - File not found when connecting to LocalDB" /><published>2017-06-19T09:50:00+01:00</published><updated>2017-06-19T09:50:00+01:00</updated><id>http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect</id><content type="html" xml:base="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/">&lt;p&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/sqlexpress/2011/07/12/introducing-localdb-an-improved-sql-express/&quot;&gt;Local DB&lt;/a&gt; is a lightweight replacement to SQL Express that is installed as part of Visual Studio. It’s free, 100% compatible with SQL Server, runs on database up to 10GB of data and you can connect using a connection string.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-06-21T10:55:06+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">.NET Uri class cheatsheet</title><link href="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/" rel="alternate" type="text/html" title=".NET Uri class cheatsheet" /><published>2017-06-21T09:00:00+01:00</published><updated>2017-06-21T09:00:00+01:00</updated><id>http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet</id><content type="html" xml:base="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/">&lt;p&gt;The &lt;a href=&quot;https://msdn.microsoft.com/en-us/library/system.uri.aspx/&quot;&gt;Uri&lt;/a&gt; class in .NET contains methods for getting at parts of the Uri. In your ASP.NET MVC project you can get the current URL from within a Controller using:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; Uri currentUrl = Request.Url;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;From this object you can then get lots of information about the current URL. I find that each time I use it, I have to look up which method gives what. Here is a quick cheatsheet for the methods and properties:&lt;/p&gt;
+
+&lt;p&gt;For the URL: &lt;a href=&quot;https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&quot;&gt;https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&lt;/a&gt;&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Uri Property&lt;/th&gt;
+      &lt;th&gt;Value&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;AbsolutePath&lt;/td&gt;
+      &lt;td&gt;/brainwipe/NJsonApiCore/search&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;AbsoluteUri&lt;/td&gt;
+      &lt;td&gt;https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Authority&lt;/td&gt;
+      &lt;td&gt;github.com&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;DnsSafeHost&lt;/td&gt;
+      &lt;td&gt;github.com&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Fragment&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Host&lt;/td&gt;
+      &lt;td&gt;github.com&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;HostNameType&lt;/td&gt;
+      &lt;td&gt;Dns&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;IsAbsoluteUri&lt;/td&gt;
+      &lt;td&gt;True&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;IsDefaultPort&lt;/td&gt;
+      &lt;td&gt;True&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;IsFile&lt;/td&gt;
+      &lt;td&gt;False&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;IsLoopback&lt;/td&gt;
+      &lt;td&gt;False&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;IsUnc&lt;/td&gt;
+      &lt;td&gt;False&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;LocalPath&lt;/td&gt;
+      &lt;td&gt;/brainwipe/NJsonApiCore/search&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;OriginalString&lt;/td&gt;
+      &lt;td&gt;https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PathAndQuery&lt;/td&gt;
+      &lt;td&gt;/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Port&lt;/td&gt;
+      &lt;td&gt;443&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Query&lt;/td&gt;
+      &lt;td&gt;?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type=&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Scheme&lt;/td&gt;
+      &lt;td&gt;https&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Segments&lt;/td&gt;
+      &lt;td&gt;/ brainwipe/ NJsonApiCore/ search&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;UserEscaped&lt;/td&gt;
+      &lt;td&gt;False&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;UserInfo&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://gist.github.com/brainwipe/845a24fe773186b318a91e51b8b2a916&quot;&gt;C# .net console gist&lt;/a&gt; for generating this output and a &lt;a href=&quot;http://www.tablesgenerator.com/markdown_tables#&quot;&gt;handy Markdown table builder&lt;/a&gt;.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">The Uri class in .NET contains methods for getting at parts of the Uri. In your ASP.NET MVC project you can get the current URL from within a Controller using: Uri currentUrl = Request.Url; From this object you can then get lots of information about the current URL. I find that each time I use it, I have to look up which method gives what. Here is a quick cheatsheet for the methods and properties: For the URL: https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type= Uri Property Value AbsolutePath /brainwipe/NJsonApiCore/search AbsoluteUri https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type= Authority github.com DnsSafeHost github.com Fragment   Host github.com HostNameType Dns IsAbsoluteUri True IsDefaultPort True IsFile False IsLoopback False IsUnc False LocalPath /brainwipe/NJsonApiCore/search OriginalString https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type= PathAndQuery /brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type= Port 443 Query ?utf8=%E2%9C%93&amp;amp;q=jsonapi&amp;amp;type= Scheme https Segments / brainwipe/ NJsonApiCore/ search UserEscaped False UserInfo   C# .net console gist for generating this output and a handy Markdown table builder.</summary></entry><entry><title type="html">DataGrip - File not found when connecting to LocalDB</title><link href="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/" rel="alternate" type="text/html" title="DataGrip - File not found when connecting to LocalDB" /><published>2017-06-19T09:50:00+01:00</published><updated>2017-06-19T09:50:00+01:00</updated><id>http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect</id><content type="html" xml:base="http://localhost:4000/localdb/datagrip/2017/06/19/datagrip-localdb-connect/">&lt;p&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/sqlexpress/2011/07/12/introducing-localdb-an-improved-sql-express/&quot;&gt;Local DB&lt;/a&gt; is a lightweight replacement to SQL Express that is installed as part of Visual Studio. It’s free, 100% compatible with SQL Server, runs on database up to 10GB of data and you can connect using a connection string.&lt;/p&gt;
 
 &lt;h2 id=&quot;datagrip&quot;&gt;DataGrip&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&quot;https://www.jetbrains.com/datagrip/&quot;&gt;DataGrip&lt;/a&gt; is a relational database management tool by JetBrains. I’ve found it easier to use for SQL Server, Postgres and MySQL than dedicated tools. Being able to switch tabs, set themes and compare output in a single UI has been really useful on projects where I need to use more than one database engine. It’s not free but there is a 30 day trial, which I urge you to try. Here’s what my UI looks like, setup how I like it:&lt;/p&gt;
@@ -9,8 +114,9 @@
 &lt;h2 id=&quot;an-error-connecting-to-local-db&quot;&gt;An error connecting to Local DB&lt;/h2&gt;
 &lt;p&gt;When &lt;a href=&quot;https://blog.jetbrains.com/datagrip/2016/10/07/connecting-datagrip-to-sql-server-express-localdb/&quot;&gt;connecting to LocalDB&lt;/a&gt; I often receive the error:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;[2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$&amp;lt;pipe name&amp;gt;\sql\query (The system cannot find the file specified)
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$&amp;lt;pipe name&amp;gt;\sql\query (The system cannot find the file specified)
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;It also fails in the Test Connection window.&lt;/p&gt;
 
@@ -18,19 +124,20 @@
 &lt;p&gt;LocalDB is significantly different to SQL Server Express in that it is very lightweight and &lt;em&gt;does not run as a service&lt;/em&gt;. It can be started and stopped when needed. What the error above is telling us is that LocalDB has not been started. If you use Visual Studio SQL Server Object Explorer, then the database will appear to be there because Visual Studio know that it needs to run LocalDB. DataGrip doesn’t have a concept of starting LocalDB. Viewing the LocalDB in Visual Studio will solve the DataGrip error because LocalDB will now be running.&lt;/p&gt;
 
 &lt;h2 id=&quot;command-line-with-localdb&quot;&gt;Command Line with LocalDB&lt;/h2&gt;
-&lt;p&gt;LocalDB &lt;a href=&quot;https://docs.microsoft.com/en-us/sql/relational-databases/express-localdb-instance-apis/command-line-management-tool-sqllocaldb-exe&quot;&gt;comes with a command line&lt;/a&gt; called &lt;code&gt;SqlLocalDB.exe&lt;/code&gt; that can be used from your Windows command prompt.&lt;/p&gt;
+&lt;p&gt;LocalDB &lt;a href=&quot;https://docs.microsoft.com/en-us/sql/relational-databases/express-localdb-instance-apis/command-line-management-tool-sqllocaldb-exe&quot;&gt;comes with a command line&lt;/a&gt; called &lt;code class=&quot;highlighter-rouge&quot;&gt;SqlLocalDB.exe&lt;/code&gt; that can be used from your Windows command prompt.&lt;/p&gt;
 
 &lt;p&gt;Find out what your instances are:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i
 MSSQLLocalDB
 ProjectsV12
 ProjectsV13
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Get detailed information for an instance:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i projectsv13
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb i projectsv13
 Name:               ProjectsV13
 Version:            13.0.1601.5
 Shared name:
@@ -40,20 +147,23 @@ State:              Running
 Last start time:    19/06/2017 11:59:28
 Instance pipe name: np:\\.\pipe\LOCALDB#C2BC2C23\tsql\query
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Note that the state there is “Running”.&lt;/p&gt;
 
 &lt;p&gt;Stop a Local DB instance:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb stop projectsv13
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb stop projectsv13
 LocalDB instance &quot;ProjectsV13&quot; stopped.
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Start a local DB instance:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb start projectsv13
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;C:\&amp;gt;sqllocaldb start projectsv13
 LocalDB instance &quot;ProjectsV13&quot; started. 
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;That is the command line way to rid yourself of the DataGrip problem.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">Local DB is a lightweight replacement to SQL Express that is installed as part of Visual Studio. It’s free, 100% compatible with SQL Server, runs on database up to 10GB of data and you can connect using a connection string. DataGrip DataGrip is a relational database management tool by JetBrains. I’ve found it easier to use for SQL Server, Postgres and MySQL than dedicated tools. Being able to switch tabs, set themes and compare output in a single UI has been really useful on projects where I need to use more than one database engine. It’s not free but there is a 30 day trial, which I urge you to try. Here’s what my UI looks like, setup how I like it: An error connecting to Local DB When connecting to LocalDB I often receive the error: [2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$&amp;lt;pipe name&amp;gt;\sql\query (The system cannot find the file specified) It also fails in the Test Connection window. LocalDB is not running! LocalDB is significantly different to SQL Server Express in that it is very lightweight and does not run as a service. It can be started and stopped when needed. What the error above is telling us is that LocalDB has not been started. If you use Visual Studio SQL Server Object Explorer, then the database will appear to be there because Visual Studio know that it needs to run LocalDB. DataGrip doesn’t have a concept of starting LocalDB. Viewing the LocalDB in Visual Studio will solve the DataGrip error because LocalDB will now be running. Command Line with LocalDB LocalDB comes with a command line called SqlLocalDB.exe that can be used from your Windows command prompt. Find out what your instances are: C:\&amp;gt;sqllocaldb i MSSQLLocalDB ProjectsV12 ProjectsV13 Get detailed information for an instance: C:\&amp;gt;sqllocaldb i projectsv13 Name: ProjectsV13 Version: 13.0.1601.5 Shared name: Owner: MyPCName\Rob Auto-create: No State: Running Last start time: 19/06/2017 11:59:28 Instance pipe name: np:\\.\pipe\LOCALDB#C2BC2C23\tsql\query Note that the state there is “Running”. Stop a Local DB instance: C:\&amp;gt;sqllocaldb stop projectsv13 LocalDB instance &quot;ProjectsV13&quot; stopped. Start a local DB instance: C:\&amp;gt;sqllocaldb start projectsv13 LocalDB instance &quot;ProjectsV13&quot; started. That is the command line way to rid yourself of the DataGrip problem.</summary></entry><entry><title type="html">.NET running on a Linux docker container</title><link href="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/" rel="alternate" type="text/html" title=".NET running on a Linux docker container" /><published>2017-05-23T13:00:00+01:00</published><updated>2017-05-23T13:00:00+01:00</updated><id>http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet</id><content type="html" xml:base="http://localhost:4000/linux/docker/dotnet/2017/05/23/docker-linux-dotnet/">&lt;p&gt;In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot.&lt;/p&gt;
 
@@ -68,14 +178,14 @@ LocalDB instance &quot;ProjectsV13&quot; started.
 &lt;h2 id=&quot;install-docker-for-windows&quot;&gt;Install Docker for Windows&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&quot;https://docs.docker.com/docker-for-windows/install/#download-docker-for-windows&quot;&gt;Download Docker for Windows&lt;/a&gt; I recommend the stable channel. I used the defaults for everything, I suggest you do too!&lt;/p&gt;
 
-&lt;p&gt;Once docker for Windows is installed, find the docker whale icon in the status bar right click and choose &lt;code&gt;Settings...&lt;/code&gt;. On the left of the settings window, choose &lt;code&gt;Shared Drives&lt;/code&gt; and tick the box for &lt;code&gt;C:&lt;/code&gt;. This will give the docker machine access to the files on the &lt;code&gt;C:&lt;/code&gt; drive, which is doesn’t have by default.&lt;/p&gt;
+&lt;p&gt;Once docker for Windows is installed, find the docker whale icon in the status bar right click and choose &lt;code class=&quot;highlighter-rouge&quot;&gt;Settings...&lt;/code&gt;. On the left of the settings window, choose &lt;code class=&quot;highlighter-rouge&quot;&gt;Shared Drives&lt;/code&gt; and tick the box for &lt;code class=&quot;highlighter-rouge&quot;&gt;C:&lt;/code&gt;. This will give the docker machine access to the files on the &lt;code class=&quot;highlighter-rouge&quot;&gt;C:&lt;/code&gt; drive, which is doesn’t have by default.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/docker-settings-share-drive.png&quot; alt=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;why-did-i-need-hyper-v&quot;&gt;Why did I need Hyper-V?&lt;/h2&gt;
 &lt;p&gt;That was a question I found myself asking at first. Where Docker is the application that is running in your system tray, the virtual machine that hosts the actual docker container is in Hyper-V. Let’s have a look at that.&lt;/p&gt;
 
-&lt;p&gt;In Windows hit the windows key and type &lt;code&gt;Hyper-V&lt;/code&gt; to get the Hyper-V Manager. You’ll see this:&lt;/p&gt;
+&lt;p&gt;In Windows hit the windows key and type &lt;code class=&quot;highlighter-rouge&quot;&gt;Hyper-V&lt;/code&gt; to get the Hyper-V Manager. You’ll see this:&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/hyper-v-docker.png&quot; alt=&quot;The Hyper-V manager with one VM running&quot; /&gt;&lt;/p&gt;
 
@@ -84,7 +194,7 @@ LocalDB instance &quot;ProjectsV13&quot; started.
 &lt;p&gt;The default IP of the docker host virtual machine is 10.0.75.1. That will come in useful later.&lt;/p&gt;
 
 &lt;h2 id=&quot;new-aspnet-core-project&quot;&gt;New ASP.NET Core Project&lt;/h2&gt;
-&lt;p&gt;Open up Visual Studio 2017 and create an ASP.NET Core Web Application. Select &lt;code&gt;Enable Docker Support&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Open up Visual Studio 2017 and create an ASP.NET Core Web Application. Select &lt;code class=&quot;highlighter-rouge&quot;&gt;Enable Docker Support&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/aspnet-core-with-docker.png&quot; alt=&quot;Creating a new ASP.NET Core project with docker support&quot; /&gt;&lt;/p&gt;
 
@@ -99,7 +209,7 @@ LocalDB instance &quot;ProjectsV13&quot; started.
 
 &lt;p&gt;In Visual Studio check the Debug output window for the reason why:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;realpath(): Invalid argument
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;realpath(): Invalid argument
 The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found.
   - Check application dependencies and target a framework version installed at: /usr/share/dotnet/shared/Microsoft.NETCore.App
   - The following versions are installed:
@@ -107,21 +217,23 @@ The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found.
   - Alternatively, install the framework version '1.1.2'.
 The program '' has exited with code 131 (0x83).
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Installing the latest version of .NET Core will solve this problem but why is it happening? Let’s look at…&lt;/p&gt;
 
 &lt;h2 id=&quot;the-dockerfile&quot;&gt;The Dockerfile&lt;/h2&gt;
 &lt;p&gt;In your ASP.NET Core project you’ll find a Dockerfile (no file extension). The Dockerfile is a build file for creating a docker image. Each line is a command. It will look a little like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;FROM microsoft/aspnetcore:1.1
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM microsoft/aspnetcore:1.1
 ARG source
 WORKDIR /app
 EXPOSE 80
 COPY ${source:-obj/Docker/publish} .
 ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;]
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;The first line &lt;code&gt;microsoft/aspnetcore:1.1&lt;/code&gt; is the base image. The name breaks down as &lt;code&gt;[maintainer]/[image]:[tag]&lt;/code&gt;. So this is an image that’s maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the &lt;a href=&quot;https://hub.docker.com/r/microsoft/aspnetcore/&quot;&gt;Docker Hub page for this image&lt;/a&gt;. You can use &lt;code&gt;FROM microsoft/aspnetcore:latest&lt;/code&gt; to get yourself running. (&lt;a href=&quot;https://stackoverflow.com/questions/44134429/why-does-latest-aspnet-core-docker-image-run-when-the-tag-1-1-fails&quot;&gt;I’ve started a Stack Overflow question to understand why&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;The first line &lt;code class=&quot;highlighter-rouge&quot;&gt;microsoft/aspnetcore:1.1&lt;/code&gt; is the base image. The name breaks down as &lt;code class=&quot;highlighter-rouge&quot;&gt;[maintainer]/[image]:[tag]&lt;/code&gt;. So this is an image that’s maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the &lt;a href=&quot;https://hub.docker.com/r/microsoft/aspnetcore/&quot;&gt;Docker Hub page for this image&lt;/a&gt;. You can use &lt;code class=&quot;highlighter-rouge&quot;&gt;FROM microsoft/aspnetcore:latest&lt;/code&gt; to get yourself running. (&lt;a href=&quot;https://stackoverflow.com/questions/44134429/why-does-latest-aspnet-core-docker-image-run-when-the-tag-1-1-fails&quot;&gt;I’ve started a Stack Overflow question to understand why&lt;/a&gt;).&lt;/p&gt;
 
 &lt;p&gt;Run the solution again and a browser window will open with the default ASP.NET Core project being shown. .NET is now running in a Linux docker container on a Linux host.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">In this post I’m going to take you through getting a .NET Core running on Linux docker container. I’m not an expert and will refer back to the Bad Old Days (BOD) a lot. Pre-requisites You might find alternatives to these tools but they are the ones that my team and I use. Before you install, make sure you understand the caveats from docker. Windows 10 Pro x64, Microsoft Hyper-V Visual Studio 2017 Install Docker for Windows Download Docker for Windows I recommend the stable channel. I used the defaults for everything, I suggest you do too! Once docker for Windows is installed, find the docker whale icon in the status bar right click and choose Settings.... On the left of the settings window, choose Shared Drives and tick the box for C:. This will give the docker machine access to the files on the C: drive, which is doesn’t have by default. Why did I need Hyper-V? That was a question I found myself asking at first. Where Docker is the application that is running in your system tray, the virtual machine that hosts the actual docker container is in Hyper-V. Let’s have a look at that. In Windows hit the windows key and type Hyper-V to get the Hyper-V Manager. You’ll see this: There’s only one Virtual Machine (VM) running called MobyLinuxVM. It’s called Moby because docker is now a trademark used by the support company and Moby is the name given to the open source bit. Moby Linux is an alpine distro of Linux with addition to allow communication between the virtual machine and Hyper-V. The default IP of the docker host virtual machine is 10.0.75.1. That will come in useful later. New ASP.NET Core Project Open up Visual Studio 2017 and create an ASP.NET Core Web Application. Select Enable Docker Support. Once complete, you can run it straight away by pressing F5. You’ll notice that the output window from the build has lots more output in it. That’s the docker compose system. If you need to add docker support to an existing solution, you can do that by adding the docker compose project Target process exited without raising a CoreCLR started event At first I saw this: In Visual Studio check the Debug output window for the reason why: realpath(): Invalid argument The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found. - Check application dependencies and target a framework version installed at: /usr/share/dotnet/shared/Microsoft.NETCore.App - The following versions are installed: 1.1.1 - Alternatively, install the framework version '1.1.2'. The program '' has exited with code 131 (0x83). Installing the latest version of .NET Core will solve this problem but why is it happening? Let’s look at… The Dockerfile In your ASP.NET Core project you’ll find a Dockerfile (no file extension). The Dockerfile is a build file for creating a docker image. Each line is a command. It will look a little like this: FROM microsoft/aspnetcore:1.1 ARG source WORKDIR /app EXPOSE 80 COPY ${source:-obj/Docker/publish} . ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;] The first line microsoft/aspnetcore:1.1 is the base image. The name breaks down as [maintainer]/[image]:[tag]. So this is an image that’s maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the Docker Hub page for this image. You can use FROM microsoft/aspnetcore:latest to get yourself running. (I’ve started a Stack Overflow question to understand why). Run the solution again and a browser window will open with the default ASP.NET Core project being shown. .NET is now running in a Linux docker container on a Linux host.</summary></entry><entry><title type="html">A .NET codger getting into Linux on Windows</title><link href="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/" rel="alternate" type="text/html" title="A .NET codger getting into Linux on Windows" /><published>2017-05-17T12:35:00+01:00</published><updated>2017-05-17T12:35:00+01:00</updated><id>http://localhost:4000/linux/wsl/2017/05/17/linux-wsl</id><content type="html" xml:base="http://localhost:4000/linux/wsl/2017/05/17/linux-wsl/">&lt;p&gt;Running .NET through Visual Studio with Microsoft SQL Server and onto a Windows Server instance has been that comfortable jumper for many years. As much as the landscape changed from Web Forms to MVC, stored procedures to Entity Framework, you still had that sense of familiarity that Microsoft won’t let you down. That rubber stamp of Microsoft quality has been an easy sell. You could say:&lt;/p&gt;
 
@@ -145,20 +257,20 @@ ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;]
 
 &lt;p&gt;Once you have the WSL running, check out the version you’re on:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ lsb_release -a&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;$ lsb_release -a&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;You can update all the packages by:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ sudo apt-get update&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;$ sudo apt-get update&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;sudo&lt;/code&gt; means that the command will run with super user priviledges (it’s short for &lt;strong&gt;s&lt;/strong&gt;per &lt;strong&gt;u&lt;/strong&gt;ser &lt;strong&gt;do&lt;/strong&gt;). &lt;code&gt;apt-get&lt;/code&gt; is the name of the package manager for Ubuntu (and Debian) distros. And &lt;code&gt;update&lt;/code&gt; is the command itself. &lt;code&gt;apt-get&lt;/code&gt; will run off to its preferred repository and download the latest packages. If there are any updates available, it will tell you each time you run it.&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;sudo&lt;/code&gt; means that the command will run with super user priviledges (it’s short for &lt;strong&gt;s&lt;/strong&gt;per &lt;strong&gt;u&lt;/strong&gt;ser &lt;strong&gt;do&lt;/strong&gt;). &lt;code class=&quot;highlighter-rouge&quot;&gt;apt-get&lt;/code&gt; is the name of the package manager for Ubuntu (and Debian) distros. And &lt;code class=&quot;highlighter-rouge&quot;&gt;update&lt;/code&gt; is the command itself. &lt;code class=&quot;highlighter-rouge&quot;&gt;apt-get&lt;/code&gt; will run off to its preferred repository and download the latest packages. If there are any updates available, it will tell you each time you run it.&lt;/p&gt;
 
 &lt;p&gt;The command window you’re typing into (also called a shell) uses a scripting language called bash. Bash is super-powerful but doesn’t look like batch or Powershell, so it’s a new skill to learn.&lt;/p&gt;
 
 &lt;h3 id=&quot;where-is-the-c-drive&quot;&gt;Where is the C drive?&lt;/h3&gt;
 &lt;p&gt;The C drive is “mounted”. You can use &lt;kbd&gt;tab&lt;/kbd&gt; for autocomplete on longer folder names.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ cd /mnt/c&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;$ cd /mnt/c&lt;/code&gt;&lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;Linux is case sensitive!&lt;/p&gt;
@@ -167,30 +279,30 @@ ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;]
 &lt;h3 id=&quot;can-i-run-my-windows-programs&quot;&gt;Can I run my windows programs?&lt;/h3&gt;
 &lt;p&gt;Yes, although it will spawn the program in Windows normally as if you had use cmd. Try running dear old notepad:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ /mnt/c/Windows/System32/notepad.exe&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;$ /mnt/c/Windows/System32/notepad.exe&lt;/code&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;path-variables-and-command-prompt-customisation&quot;&gt;Path variables and command prompt customisation&lt;/h2&gt;
-&lt;p&gt;I’m a sucker for having things just so. I have a &lt;a href=&quot;https://github.com/brainwipe/scripts&quot;&gt;scripts git repository&lt;/a&gt; that I’m building up and I want a path to the cloned repository on my local machine. To do that you need to edit a file called &lt;code&gt;.bashrc&lt;/code&gt;, which is a shell script that is run when the shell first starts.&lt;/p&gt;
+&lt;p&gt;I’m a sucker for having things just so. I have a &lt;a href=&quot;https://github.com/brainwipe/scripts&quot;&gt;scripts git repository&lt;/a&gt; that I’m building up and I want a path to the cloned repository on my local machine. To do that you need to edit a file called &lt;code class=&quot;highlighter-rouge&quot;&gt;.bashrc&lt;/code&gt;, which is a shell script that is run when the shell first starts.&lt;/p&gt;
 
 &lt;p&gt;You can edit it using &lt;a href=&quot;https://www.howtogeek.com/howto/42980/the-beginners-guide-to-nano-the-linux-command-line-text-editor/&quot;&gt;nano&lt;/a&gt; (there are many others) like this:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;$ nano ~/.bashrc&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;$ nano ~/.bashrc&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;The &lt;code&gt;~/&lt;/code&gt; is a shortcut for saying “the current users home directory”, which is not the Windows one but instead located in &lt;code&gt;/home/&amp;lt;username&amp;gt;&lt;/code&gt; such as &lt;code&gt;/home/brainwipe&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;~/&lt;/code&gt; is a shortcut for saying “the current users home directory”, which is not the Windows one but instead located in &lt;code class=&quot;highlighter-rouge&quot;&gt;/home/&amp;lt;username&amp;gt;&lt;/code&gt; such as &lt;code class=&quot;highlighter-rouge&quot;&gt;/home/brainwipe&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;There’s a bunch of stuff in &lt;code&gt;.bashrc&lt;/code&gt; to begin with, you can add more at the bottom. I can add new paths like this:&lt;/p&gt;
+&lt;p&gt;There’s a bunch of stuff in &lt;code class=&quot;highlighter-rouge&quot;&gt;.bashrc&lt;/code&gt; to begin with, you can add more at the bottom. I can add new paths like this:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;PATH=$PATH:/mnt/c/Projects/brainwipe/scripts/bash&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;PATH=$PATH:/mnt/c/Projects/brainwipe/scripts/bash&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;As the &lt;code&gt;PATH&lt;/code&gt; variable is a big, long single string (like it used to be shown in Windows), you are actually appending your new path (in this case &lt;code&gt;/mnt/c/Projects/brainwipe/scripts/bash&lt;/code&gt;) onto the existing variable &lt;code&gt;$PATH&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;As the &lt;code class=&quot;highlighter-rouge&quot;&gt;PATH&lt;/code&gt; variable is a big, long single string (like it used to be shown in Windows), you are actually appending your new path (in this case &lt;code class=&quot;highlighter-rouge&quot;&gt;/mnt/c/Projects/brainwipe/scripts/bash&lt;/code&gt;) onto the existing variable &lt;code class=&quot;highlighter-rouge&quot;&gt;$PATH&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;The other thing I like to change is the command prompt. I like to have the time and working directory. That’s just another line in the &lt;code&gt;.bashrc&lt;/code&gt; file.&lt;/p&gt;
+&lt;p&gt;The other thing I like to change is the command prompt. I like to have the time and working directory. That’s just another line in the &lt;code class=&quot;highlighter-rouge&quot;&gt;.bashrc&lt;/code&gt; file.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;export PS1=&quot;\t \w &amp;gt;&quot;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;export PS1=&quot;\t \w &amp;gt;&quot;&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;Will give: &lt;code&gt;13:36:36 /mnt/c/Projects &amp;gt;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Will give: &lt;code class=&quot;highlighter-rouge&quot;&gt;13:36:36 /mnt/c/Projects &amp;gt;&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;PS1&lt;/code&gt; stands for &lt;em&gt;Prompt String One&lt;/em&gt;. You can find loads of example of prompt coolness on [make tech easier]https://www.maketecheasier.com/8-useful-and-interesting-bash-prompts/) and all over the web!&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;PS1&lt;/code&gt; stands for &lt;em&gt;Prompt String One&lt;/em&gt;. You can find loads of example of prompt coolness on [make tech easier]https://www.maketecheasier.com/8-useful-and-interesting-bash-prompts/) and all over the web!&lt;/p&gt;
 
 &lt;h2 id=&quot;further-reading&quot;&gt;Further Reading&lt;/h2&gt;
 
@@ -225,9 +337,9 @@ ENTRYPOINT [&quot;dotnet&quot;, &quot;AspNetCoreInDocker.dll&quot;]
 &lt;h2 id=&quot;installing-jekyll&quot;&gt;Installing Jekyll&lt;/h2&gt;
 &lt;p&gt;Naively, I put in the first command:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ gem install jekyll bundler
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;gem install jekyll bundler
 ERROR:  While executing gem ... &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Gem::FilePermissionError&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
-    You don&lt;span class=&quot;err&quot;&gt;&amp;#39;&lt;/span&gt;t have write permissions into the /var/lib/gems/1.9.1 directory.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+    You don&lt;span class=&quot;s1&quot;&gt;'t have write permissions into the /var/lib/gems/1.9.1 directory.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Firstly, I notice that it’s trying to install to the gems directory of 1.9.1. Is that the Ruby version or the gems version?I went hunting and found that I didn’t have the &lt;a href=&quot;https://jekyllrb.com/docs/installation/#requirements&quot;&gt;requirements&lt;/a&gt;:&lt;/p&gt;
 
@@ -240,54 +352,54 @@ ERROR:  While executing gem ... &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Ge
 
 &lt;p&gt;Ah, so my Linux distro isn’t complete enough. I start off by installing &lt;a href=&quot;https://gcc.gnu.org/&quot;&gt;GCC&lt;/a&gt; and Make.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;sudo apt-get install gcc
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install gcc
 sudo apt-get install make&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;It seems odd that Jekyll needs a compiler and make tool to work. Jekyll assured me that this is easy, so I kept going. So, I noticed that I needed Ruby 2.0, so what version do I have?&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Which gives:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;ruby &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.9.3p484 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2013&lt;/span&gt;-11-22 revision &lt;span class=&quot;m&quot;&gt;43786&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;x86_64-linux&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ruby 1.9.3p484 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;2013-11-22 revision 43786&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;x86_64-linux]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;OK, so that’s out of date. I’ll update:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ sudo apt-get install ruby
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get install ruby
 Reading package lists... Done
 Building dependency tree
 Reading state information... Done
 ruby is already the newest version.
 The following packages were automatically installed and are no longer required:
   fgetty os-prober
-Use &lt;span class=&quot;s1&quot;&gt;&amp;#39;apt-get autoremove&amp;#39;&lt;/span&gt; to remove them.
-&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to upgrade, &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to newly install, &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; to remove and &lt;span class=&quot;m&quot;&gt;144&lt;/span&gt; not to upgrade.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+Use &lt;span class=&quot;s1&quot;&gt;'apt-get autoremove'&lt;/span&gt; to remove them.
+0 to upgrade, 0 to newly install, 0 to remove and 144 not to upgrade.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;Already the newest version, eh? I think not! It’s over to the &lt;a href=&quot;https://www.ruby-lang.org/en/documentation/installation/#apt&quot;&gt;Ruby Install&lt;/a&gt; page. However Ubuntu’s &lt;code&gt;apt-get&lt;/code&gt; will only get you as far as version 1.9.3. So how do you get Ruby 2 on Ubuntu 14.04. That sounds like a Stack Overflow question, &lt;a href=&quot;http://stackoverflow.com/q/26595620/328730&quot;&gt;which it is&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Already the newest version, eh? I think not! It’s over to the &lt;a href=&quot;https://www.ruby-lang.org/en/documentation/installation/#apt&quot;&gt;Ruby Install&lt;/a&gt; page. However Ubuntu’s &lt;code class=&quot;highlighter-rouge&quot;&gt;apt-get&lt;/code&gt; will only get you as far as version 1.9.3. So how do you get Ruby 2 on Ubuntu 14.04. That sounds like a Stack Overflow question, &lt;a href=&quot;http://stackoverflow.com/q/26595620/328730&quot;&gt;which it is&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;enter-rbenv&quot;&gt;Enter rbenv&lt;/h2&gt;
 
-&lt;p&gt;Silly me for thinking that &lt;code&gt;apt-get&lt;/code&gt; would install Ruby 2. No, I have to use &lt;a href=&quot;https://github.com/rbenv/rbenv&quot;&gt;rbenv&lt;/a&gt;. You have to install a load of pre-requisites (some I already had) and then &lt;code&gt;git clone&lt;/code&gt; the &lt;code&gt;rbenv&lt;/code&gt; repository into a folder, add PATH variables and so on.&lt;/p&gt;
+&lt;p&gt;Silly me for thinking that &lt;code class=&quot;highlighter-rouge&quot;&gt;apt-get&lt;/code&gt; would install Ruby 2. No, I have to use &lt;a href=&quot;https://github.com/rbenv/rbenv&quot;&gt;rbenv&lt;/a&gt;. You have to install a load of pre-requisites (some I already had) and then &lt;code class=&quot;highlighter-rouge&quot;&gt;git clone&lt;/code&gt; the &lt;code class=&quot;highlighter-rouge&quot;&gt;rbenv&lt;/code&gt; repository into a folder, add PATH variables and so on.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;http://stackoverflow.com/a/26595869/328730&quot;&gt;From Stack Overflow answer:&lt;/a&gt;&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;sudo apt-get update
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get update
 sudo apt-get install git-core curl zlib1g-dev build-essential libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev python-software-properties libffi-dev
 
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;export PATH=&amp;quot;$HOME/.rbenv/bin:$PATH&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
-&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;eval &amp;quot;$(rbenv init -)&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;'&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'eval &quot;$(rbenv init -)&quot;'&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
 &lt;span class=&quot;nb&quot;&gt;exec&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$SHELL&lt;/span&gt;
 
 git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;export PATH=&amp;quot;$HOME/.rbenv/plugins/ruby-build/bin:$PATH&amp;quot;&amp;#39;&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'export PATH=&quot;$HOME/.rbenv/plugins/ruby-build/bin:$PATH&quot;'&lt;/span&gt; &amp;gt;&amp;gt; ~/.bashrc
 &lt;span class=&quot;nb&quot;&gt;exec&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$SHELL&lt;/span&gt;
 
-rbenv install --verbose &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;.4.1
-rbenv global &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;.4.1
+rbenv install --verbose 2.4.1
+rbenv global 2.4.1
 ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;&lt;code&gt;rbenv install&lt;/code&gt; took several minutes. I added the &lt;code&gt;--verbose&lt;/code&gt; switch so that I could see it going (others &lt;a href=&quot;http://stackoverflow.com/q/23944406/328730&quot;&gt;had thought it had hung&lt;/a&gt;). The last command &lt;code&gt;ruby -v&lt;/code&gt; gives me &lt;code&gt;ruby 2.4.1p111 (2017-03-22 revision 58053) [x86_64-linux]&lt;/code&gt;, which is a relief!&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;rbenv install&lt;/code&gt; took several minutes. I added the &lt;code class=&quot;highlighter-rouge&quot;&gt;--verbose&lt;/code&gt; switch so that I could see it going (others &lt;a href=&quot;http://stackoverflow.com/q/23944406/328730&quot;&gt;had thought it had hung&lt;/a&gt;). The last command &lt;code class=&quot;highlighter-rouge&quot;&gt;ruby -v&lt;/code&gt; gives me &lt;code class=&quot;highlighter-rouge&quot;&gt;ruby 2.4.1p111 (2017-03-22 revision 58053) [x86_64-linux]&lt;/code&gt;, which is a relief!&lt;/p&gt;
 
 &lt;p&gt;It’s important to remember that I’m just trying to get Jekyll to run at this point. This is a pre-requisite to a pre-requisite. I was tempted to go back to writing HTML at this point. I’m pretty productive in that, I wrote my first HTML page at the end of 1995. I’m not quite spitting teeth at this point but I’d decided that I was going to blog all this nonsense. Not the first post I wanted to write but that’s blogging for you.&lt;/p&gt;
 
@@ -295,23 +407,23 @@ ruby -v&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;We have the pre-requisites installed, now to try installing Jekyll and &lt;a href=&quot;http://bundler.io/&quot;&gt;bundler&lt;/a&gt;. Bundler is a way to manage your Ruby gems, a Ruby gem being a library. It works off a Gemfile that greatly simplifies the inclusion and management of Ruby gems.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ gem install jekyll bundler
-$ jekyll new my-awesome-site&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;gem install jekyll bundler
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;jekyll new my-awesome-site&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;This worked! I now had Jekyll ready to go. To build and run the site, go to the directory where your Jekyll site is and type:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;h2 id=&quot;theming&quot;&gt;Theming&lt;/h2&gt;
 
-&lt;p&gt;Jekyll doesn’t theme like other platforms. Rather than download a theme into a theme folder, you replace most of the files with theme files. I grabbed the popular &lt;a href=&quot;https://github.com/poole/hyde&quot;&gt;Hyde&lt;/a&gt; and replaced many of the files. You have to be careful with the &lt;code&gt;_config.yml&lt;/code&gt; and &lt;code&gt;Gemfile&lt;/code&gt; as these will have settings specific to the theme. I ended up with mash of Gemfile from Hyde and _config from the original new Jekyll site. It was a right mess. Rather than doing Jekyll new, I recommend cloning an existing theme into your GitHub pages folder.&lt;/p&gt;
+&lt;p&gt;Jekyll doesn’t theme like other platforms. Rather than download a theme into a theme folder, you replace most of the files with theme files. I grabbed the popular &lt;a href=&quot;https://github.com/poole/hyde&quot;&gt;Hyde&lt;/a&gt; and replaced many of the files. You have to be careful with the &lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;Gemfile&lt;/code&gt; as these will have settings specific to the theme. I ended up with mash of Gemfile from Hyde and _config from the original new Jekyll site. It was a right mess. Rather than doing Jekyll new, I recommend cloning an existing theme into your GitHub pages folder.&lt;/p&gt;
 
 &lt;p&gt;Once you have the theme down, make sure you use bundler to get the gems that the theme needs.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ bundler&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;bundler&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;When that completes, run:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;&lt;/span&gt;$ jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;jekyll serve&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;It will tell you the port it’s chosen. On WSL, you need to remember that it shares ports with Windows, so you might get a port conflict if you have other sites running elsewhere.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">As I use more open source frameworks and tools, I’ve found that I’ve been writing down documentation that isn’t just useful to business. So I decided to start a new dev blog. I checked out Wordpress and I’ve used Blogger before but I decided that static pages were the way to go, using the excellent GitHub pages.</summary></entry></feed>

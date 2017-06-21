@@ -1,8 +1,8 @@
 ---
 layout: post
-title: "Examples of .NET Uri class"
+title: ".NET Uri class cheatsheet"
 date: 2017-06-21 09:00:00 +01:00
-categories: dotnet aspnet
+categories: dotnet aspnet cheatsheet
 ---
 The [Uri](https://msdn.microsoft.com/en-us/library/system.uri.aspx/) class in .NET contains methods for getting at parts of the Uri. In your ASP.NET MVC project you can get the current URL from within a Controller using:
 
@@ -10,7 +10,7 @@ The [Uri](https://msdn.microsoft.com/en-us/library/system.uri.aspx/) class in .N
 
 From this object you can then get lots of information about the current URL. I find that each time I use it, I have to look up which method gives what. Here is a quick cheatsheet for the methods and properties:
 
-For the URL: `https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&q=jsonapi&type=`
+For the URL: [https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&q=jsonapi&type=](https://github.com/brainwipe/NJsonApiCore/search?utf8=%E2%9C%93&q=jsonapi&type=)
 
 | Uri Property   | Value                                                                           |
 |----------------|---------------------------------------------------------------------------------|

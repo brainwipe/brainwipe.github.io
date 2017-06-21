@@ -32,12 +32,12 @@ exclude:
 gems: 
   - jekyll-feed
   - jekyll-gist
-  - pygments.rb
+  - rouge
   - kramdown
 
 # Dependencies
 markdown:         kramdown
-highlighter:      pygments
+highlighter:      rouge
 
 # Permalinks
 permalink:        pretty
