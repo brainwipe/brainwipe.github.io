@@ -1,5 +1,140 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-06-21T10:55:06+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">.NET Uri class cheatsheet</title><link href="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/" rel="alternate" type="text/html" title=".NET Uri class cheatsheet" /><published>2017-06-21T09:00:00+01:00</published><updated>2017-06-21T09:00:00+01:00</updated><id>http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet</id><content type="html" xml:base="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/">&lt;p&gt;The &lt;a href=&quot;https://msdn.microsoft.com/en-us/library/system.uri.aspx/&quot;&gt;Uri&lt;/a&gt; class in .NET contains methods for getting at parts of the Uri. In your ASP.NET MVC project you can get the current URL from within a Controller using:&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-07-28T16:47:44+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Adding an nginx container for static files in my VS2017 solution</title><link href="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/" rel="alternate" type="text/html" title="Adding an nginx container for static files in my VS2017 solution" /><published>2017-07-28T09:00:00+01:00</published><updated>2017-07-28T09:00:00+01:00</updated><id>http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose</id><content type="html" xml:base="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/">&lt;p&gt;I am using Visual Studio with a docker-compose project to handle the building and running of my docker instances. I want the developer to download the repository, hit F5 and for it to just work. I already have a few linux containers running aspnetcore projects and now I wanted a simple container to serve static files. The static file I needed was a simple HTML page that would call an authentication API. I call it &lt;em&gt;mcotestclient&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;This is the journey I had and the problems I found.&lt;/p&gt;
+
+&lt;h2 id=&quot;dockerfile-for-the-new-container&quot;&gt;Dockerfile for the new container&lt;/h2&gt;
+&lt;p&gt;I decided to use a super-light linux container (which is inline with the brief of our solution) and decided on &lt;a href=&quot;https://www.nginx.com/resources/wiki/&quot;&gt;nginx&lt;/a&gt; as the web server to hand the static files. To add a new container, I began with a new solution folder with an HTML file (&lt;code class=&quot;highlighter-rouge&quot;&gt;index.html&lt;/code&gt;) and a Dockerfile:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM nginx:alpine
+COPY . /usr/share/nginx/html
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This Dockerfile gets the nginx docker image, which is in turn built upon a super lightweight &lt;a href=&quot;https://alpinelinux.org/&quot;&gt;Alpine&lt;/a&gt; Linux distribution. It then copies the contents of the folder (just my boring &lt;code class=&quot;highlighter-rouge&quot;&gt;index.html&lt;/code&gt;) into &lt;code class=&quot;highlighter-rouge&quot;&gt;/user/share/nginx/html&lt;/code&gt;, which is the default location.&lt;/p&gt;
+
+&lt;p&gt;The Dockerfile only creates a new image, to have a new instance run, we need to add a new service to the &lt;code class=&quot;highlighter-rouge&quot;&gt;docker-compose.yml&lt;/code&gt; file.&lt;/p&gt;
+
+&lt;h2 id=&quot;adding-a-new-container-to-docker-compose&quot;&gt;Adding a new container to docker-compose&lt;/h2&gt;
+&lt;p&gt;In my docker-compose project, I opened &lt;code class=&quot;highlighter-rouge&quot;&gt;docker-compose.yml&lt;/code&gt; and added a new image:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;services:
+    [snip my other containers]
+
+    mcotestclient:
+        image: mcotestclient
+        build: 
+            context: ./Client
+            dockerfile: Dockerfile
+        ports:
+        - 56108:80
+        networks:
+        - mconetwork
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mco&lt;/code&gt; is our company prefix, the folder where &lt;code class=&quot;highlighter-rouge&quot;&gt;index.html&lt;/code&gt; and the Dockerfile was located is &lt;code class=&quot;highlighter-rouge&quot;&gt;./Client&lt;/code&gt; and I want it to run on port &lt;code class=&quot;highlighter-rouge&quot;&gt;56108&lt;/code&gt; so that when I go to &lt;code class=&quot;highlighter-rouge&quot;&gt;http://localhost:56108&lt;/code&gt; I see my index page.&lt;/p&gt;
+
+&lt;h2 id=&quot;first-error-can-not-find-label-commicrosoftvisualstudiotargetoperatingsystem&quot;&gt;First error: Can not find label com.microsoft.visualstudio.targetoperatingsystem&lt;/h2&gt;
+&lt;p&gt;I built the solution and got the following:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Error	MSB4018	The &quot;PrepareForBuild&quot; task failed unexpectedly.
+System.InvalidOperationException: Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'.
+at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.GetLabelValue(IReadOnlyDictionary`2 labels, String labelName, Boolean required)
+at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.ParseDockerServiceDebugProfiles(String workspaceName, DockerComposeDocument document)
+at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;GetDockerServiceDebugProfilesAsync&amp;gt;d__12.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;PrepareForBuildAsync&amp;gt;d__13.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute()
+at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute()
+at Microsoft.Build.BackEnd.TaskBuilder.&amp;lt;ExecuteInstantiatedTask&amp;gt;d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The most important line is that &lt;code class=&quot;highlighter-rouge&quot;&gt;Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'&lt;/code&gt;. This means that Visual Studio needs to know what the operating system is. In your docker-compose project, click the little triangle next to &lt;code class=&quot;highlighter-rouge&quot;&gt;docker-compose.yml&lt;/code&gt; and you’ll see that there are a number of additional files that Visual Studio needs. Open &lt;code class=&quot;highlighter-rouge&quot;&gt;docker-compose.vs.debug.yml&lt;/code&gt;. I needed to put in a new entry in there to tell it what the target operating system was for my new image:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mcotestclient:
+    image: mcotestclient:dev
+    labels:
+    - &quot;com.microsoft.visualstudio.targetoperatingsystem=linux&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;second-error---no-such-file-or-directory-binbash&quot;&gt;Second Error - no such file or directory /bin/bash&lt;/h2&gt;
+&lt;p&gt;For the second error, the Error window showed that:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Error	MSB4018	The &quot;PrepareForBuild&quot; task failed unexpectedly.
+Microsoft.DotNet.Docker.CommandLineClientException: .
+
+For more troubleshooting information, go to http://aka.ms/DockerToolsTroubleshooting ---&amp;gt; Microsoft.DotNet.Docker.CommandLineClientException
+at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+at Microsoft.DotNet.Docker.DockerClient.&amp;lt;ExecuteAsync&amp;gt;d__0.MoveNext()
+--- End of inner exception stack trace ---
+at Microsoft.DotNet.Docker.DockerClient.&amp;lt;ExecuteAsync&amp;gt;d__0.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;PrepareForBuildAsync&amp;gt;d__13.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute()
+at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute()
+at Microsoft.Build.BackEnd.TaskBuilder.&amp;lt;ExecuteInstantiatedTask&amp;gt;d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This is Visual Studio telling us that something happened on the command line and it doesn’t know how to deal with it. In this case, go to the Visual Studio Output window, ensure you’ve got Build selected in the drop down at the top and scroll up to the line about that stack trace, you’ll see the actual commands it was trying to run:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[snip]
+docker  ps --filter &quot;status=running&quot; --filter &quot;name=dockercompose320715364_mcotestclient_&quot; --format {{.ID}} -n 1
+2&amp;gt;ab666c689e17
+2&amp;gt;docker  exec -i ab666c689e17 /bin/bash -c &quot;if PID=$(pidof -x dotnet); then kill $PID; fi&quot;
+2&amp;gt;rpc error: code = 2 desc = oci runtime error: exec failed: container_linux.go:262: starting container process caused &quot;exec: \&quot;/bin/bash\&quot;: stat /bin/bash: no such file or directory&quot;
+2&amp;gt;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets(153,5): error MSB4018: The &quot;PrepareForBuild&quot; task failed unexpectedly.
+2&amp;gt;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets(153,5): error MSB4018: Microsoft.DotNet.Docker.CommandLineClientException: .
+[snip]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;At the boittom I’ve included the first two lines of the stack trace to show you what it looks like. The docker-compose project uses MSBuild to run the docker commands for you. At the top you can see that it first needs the process ID of an existing &lt;em&gt;mcotestclient&lt;/em&gt; container, which is &lt;code class=&quot;highlighter-rouge&quot;&gt;ab666c689e17&lt;/code&gt; and then it passes it to an &lt;code class=&quot;highlighter-rouge&quot;&gt;exec&lt;/code&gt; command. That exec command attaches to the running container and kills the dotnet process inside (there isn’t one but it doesn’t know that). However, this fails. The next line says that the exec failed because &lt;code class=&quot;highlighter-rouge&quot;&gt;/bin/bash&lt;/code&gt; does not exist. That folder isn’t there because bash isn’t there.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;BASH NOT EXIST? BUT THIS IS LINUX!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;No, this is Alpine Linux, which doesn’t have bash. The Visual Studio compose file assumes that every Linux container has bash on it. Not unreasonable but not right.&lt;/p&gt;
+
+&lt;h3 id=&quot;options-install-bash-or-change-the-base-image&quot;&gt;Options: install bash or change the base image&lt;/h3&gt;
+&lt;p&gt;A change needs to be made to my super light Dockerfile, which currently looks like this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM nginx:alpine
+COPY . /usr/share/nginx/html
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Either add bash to Alpine like this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM nginx:alpine
+RUN apk update &amp;amp;&amp;amp; apk add bash
+COPY . /usr/share/nginx/html
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Or choose the default container:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;FROM nginx
+COPY . /usr/share/nginx/html
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;As I wanted simplicity and that this would not be a production container, I went with the default container.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;NB: Make sure you clean, rebuild and run the solution, else the change will not be picked up!&lt;/strong&gt;&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">I am using Visual Studio with a docker-compose project to handle the building and running of my docker instances. I want the developer to download the repository, hit F5 and for it to just work. I already have a few linux containers running aspnetcore projects and now I wanted a simple container to serve static files. The static file I needed was a simple HTML page that would call an authentication API. I call it mcotestclient. This is the journey I had and the problems I found. Dockerfile for the new container I decided to use a super-light linux container (which is inline with the brief of our solution) and decided on nginx as the web server to hand the static files. To add a new container, I began with a new solution folder with an HTML file (index.html) and a Dockerfile: FROM nginx:alpine COPY . /usr/share/nginx/html This Dockerfile gets the nginx docker image, which is in turn built upon a super lightweight Alpine Linux distribution. It then copies the contents of the folder (just my boring index.html) into /user/share/nginx/html, which is the default location. The Dockerfile only creates a new image, to have a new instance run, we need to add a new service to the docker-compose.yml file. Adding a new container to docker-compose In my docker-compose project, I opened docker-compose.yml and added a new image: services: [snip my other containers] mcotestclient: image: mcotestclient build: context: ./Client dockerfile: Dockerfile ports: - 56108:80 networks: - mconetwork mco is our company prefix, the folder where index.html and the Dockerfile was located is ./Client and I want it to run on port 56108 so that when I go to http://localhost:56108 I see my index page. First error: Can not find label com.microsoft.visualstudio.targetoperatingsystem I built the solution and got the following: Error MSB4018 The &quot;PrepareForBuild&quot; task failed unexpectedly. System.InvalidOperationException: Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'. at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.GetLabelValue(IReadOnlyDictionary`2 labels, String labelName, Boolean required) at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.ParseDockerServiceDebugProfiles(String workspaceName, DockerComposeDocument document) at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;GetDockerServiceDebugProfilesAsync&amp;gt;d__12.MoveNext() --- End of stack trace from previous location where exception was thrown --- at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task) at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task) at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;PrepareForBuildAsync&amp;gt;d__13.MoveNext() --- End of stack trace from previous location where exception was thrown --- at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task) at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task) at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute() at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute() at Microsoft.Build.BackEnd.TaskBuilder.&amp;lt;ExecuteInstantiatedTask&amp;gt;d__26.MoveNext() docker-compose C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets 153 The most important line is that Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'. This means that Visual Studio needs to know what the operating system is. In your docker-compose project, click the little triangle next to docker-compose.yml and you’ll see that there are a number of additional files that Visual Studio needs. Open docker-compose.vs.debug.yml. I needed to put in a new entry in there to tell it what the target operating system was for my new image: mcotestclient: image: mcotestclient:dev labels: - &quot;com.microsoft.visualstudio.targetoperatingsystem=linux&quot; Second Error - no such file or directory /bin/bash For the second error, the Error window showed that: Error MSB4018 The &quot;PrepareForBuild&quot; task failed unexpectedly. Microsoft.DotNet.Docker.CommandLineClientException: . For more troubleshooting information, go to http://aka.ms/DockerToolsTroubleshooting ---&amp;gt; Microsoft.DotNet.Docker.CommandLineClientException at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task) at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task) at Microsoft.DotNet.Docker.DockerClient.&amp;lt;ExecuteAsync&amp;gt;d__0.MoveNext() --- End of inner exception stack trace --- at Microsoft.DotNet.Docker.DockerClient.&amp;lt;ExecuteAsync&amp;gt;d__0.MoveNext() --- End of stack trace from previous location where exception was thrown --- at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task) at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task) at Microsoft.DotNet.Docker.DockerWorkspace.&amp;lt;PrepareForBuildAsync&amp;gt;d__13.MoveNext() --- End of stack trace from previous location where exception was thrown --- at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task) at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task) at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute() at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute() at Microsoft.Build.BackEnd.TaskBuilder.&amp;lt;ExecuteInstantiatedTask&amp;gt;d__26.MoveNext() docker-compose C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets 153 This is Visual Studio telling us that something happened on the command line and it doesn’t know how to deal with it. In this case, go to the Visual Studio Output window, ensure you’ve got Build selected in the drop down at the top and scroll up to the line about that stack trace, you’ll see the actual commands it was trying to run: [snip] docker ps --filter &quot;status=running&quot; --filter &quot;name=dockercompose320715364_mcotestclient_&quot; --format {{.ID}} -n 1 2&amp;gt;ab666c689e17 2&amp;gt;docker exec -i ab666c689e17 /bin/bash -c &quot;if PID=$(pidof -x dotnet); then kill $PID; fi&quot; 2&amp;gt;rpc error: code = 2 desc = oci runtime error: exec failed: container_linux.go:262: starting container process caused &quot;exec: \&quot;/bin/bash\&quot;: stat /bin/bash: no such file or directory&quot; 2&amp;gt;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets(153,5): error MSB4018: The &quot;PrepareForBuild&quot; task failed unexpectedly. 2&amp;gt;C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets(153,5): error MSB4018: Microsoft.DotNet.Docker.CommandLineClientException: . [snip] At the boittom I’ve included the first two lines of the stack trace to show you what it looks like. The docker-compose project uses MSBuild to run the docker commands for you. At the top you can see that it first needs the process ID of an existing mcotestclient container, which is ab666c689e17 and then it passes it to an exec command. That exec command attaches to the running container and kills the dotnet process inside (there isn’t one but it doesn’t know that). However, this fails. The next line says that the exec failed because /bin/bash does not exist. That folder isn’t there because bash isn’t there. BASH NOT EXIST? BUT THIS IS LINUX! No, this is Alpine Linux, which doesn’t have bash. The Visual Studio compose file assumes that every Linux container has bash on it. Not unreasonable but not right. Options: install bash or change the base image A change needs to be made to my super light Dockerfile, which currently looks like this: FROM nginx:alpine COPY . /usr/share/nginx/html Either add bash to Alpine like this: FROM nginx:alpine RUN apk update &amp;amp;&amp;amp; apk add bash COPY . /usr/share/nginx/html Or choose the default container: FROM nginx COPY . /usr/share/nginx/html As I wanted simplicity and that this would not be a production container, I went with the default container. NB: Make sure you clean, rebuild and run the solution, else the change will not be picked up!</summary></entry><entry><title type="html">.NET Uri class cheatsheet</title><link href="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/" rel="alternate" type="text/html" title=".NET Uri class cheatsheet" /><published>2017-06-21T09:00:00+01:00</published><updated>2017-06-21T09:00:00+01:00</updated><id>http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet</id><content type="html" xml:base="http://localhost:4000/dotnet/aspnet/cheatsheet/2017/06/21/dotnet-uri-cheatsheet/">&lt;p&gt;The &lt;a href=&quot;https://msdn.microsoft.com/en-us/library/system.uri.aspx/&quot;&gt;Uri&lt;/a&gt; class in .NET contains methods for getting at parts of the Uri. In your ASP.NET MVC project you can get the current URL from within a Controller using:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; Uri currentUrl = Request.Url;
 &lt;/code&gt;&lt;/pre&gt;
