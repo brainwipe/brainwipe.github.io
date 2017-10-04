@@ -1,5 +1,164 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-07-28T16:47:44+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Adding an nginx container for static files in my VS2017 solution</title><link href="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/" rel="alternate" type="text/html" title="Adding an nginx container for static files in my VS2017 solution" /><published>2017-07-28T09:00:00+01:00</published><updated>2017-07-28T09:00:00+01:00</updated><id>http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose</id><content type="html" xml:base="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/">&lt;p&gt;I am using Visual Studio with a docker-compose project to handle the building and running of my docker instances. I want the developer to download the repository, hit F5 and for it to just work. I already have a few linux containers running aspnetcore projects and now I wanted a simple container to serve static files. The static file I needed was a simple HTML page that would call an authentication API. I call it &lt;em&gt;mcotestclient&lt;/em&gt;.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-10-04T17:03:46+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Using Brighter on ASP.NET Core 2.0 API</title><link href="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/" rel="alternate" type="text/html" title="Using Brighter on ASP.NET Core 2.0 API" /><published>2017-10-04T09:00:00+01:00</published><updated>2017-10-04T09:00:00+01:00</updated><id>http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore</id><content type="html" xml:base="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/">&lt;p&gt;In this post you will learn how to get a simple ASP.NET Core 2 API running that uses the &lt;a href=&quot;https://github.com/BrighterCommand/Brighter&quot;&gt;Brighter&lt;/a&gt; command pattern for sending updates to an in-memory database. Brighter is a library that sits between the API layer and your business logic (and persistance/database layer). This is not production code but the smallest number of steps to get a simple Brighter Command Processor working in ASP.NET Core 2.&lt;/p&gt;
+
+&lt;p&gt;You can get the completed code from my example &lt;a href=&quot;https://github.com/brainwipe/BrighterOnAspNetCoreExample&quot;&gt;BrighterOnAspNetCoreExample&lt;/a&gt; repository.&lt;/p&gt;
+
+&lt;h2 id=&quot;pre-requisites&quot;&gt;Pre-requisites&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;Visual Studio 2017&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;command-query-responsibility-separation&quot;&gt;Command, Query Responsibility Separation&lt;/h2&gt;
+&lt;p&gt;CQRS is an architecture pattern where you use a different model to update than you do to query. &lt;a href=&quot;https://martinfowler.com/bliki/CQRS.html&quot;&gt;Martin Fowler&lt;/a&gt; does an excellent job of explaining it in detail. Brigher only deals with the Command side, that is the create, update and delete.&lt;/p&gt;
+
+&lt;h2 id=&quot;1-create-aspnet-core-20-api-project&quot;&gt;1. Create ASP.NET Core 2.0 API Project&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;In Visual Studio, File → New Project → ASP.NET Core&lt;/li&gt;
+  &lt;li&gt;In the next window choose Web API&lt;/li&gt;
+  &lt;li&gt;I’m going to call the project BrighterOnAspNetCore&lt;/li&gt;
+  &lt;li&gt;In the Solution Explorer, right click BrighterOnAspNetCore → Properties&lt;/li&gt;
+  &lt;li&gt;In Application Tab, select Target Framework as .NET Core 2.0 and save.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;2-update-existing-dependencies&quot;&gt;2. Update existing dependencies&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;Right click on the BrighterOnAspNetCore → Manage Nuget Packages&lt;/li&gt;
+  &lt;li&gt;Update any existing packages to v2.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;3-add-brighter-aspnet-core-dependency&quot;&gt;3. Add Brighter AspNet Core dependency&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;Still in the Nuget Package Manager window, click “Include Prerelease”&lt;/li&gt;
+  &lt;li&gt;Install &lt;code class=&quot;highlighter-rouge&quot;&gt;Paramore.Brighter.AspNetCore&lt;/code&gt; by Daniel Stockhammer. (Brighter will be installed too)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;4-create-a-library-to-hold-your-domain&quot;&gt;4. Create a library to hold your domain&lt;/h2&gt;
+&lt;p&gt;This step is not absolutely necessary but will give a better feel of what a solution ready for production would look like.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;In Solution Explorer, right click the Solution → Add&lt;/li&gt;
+  &lt;li&gt;Choose an ASP.NET Core class library, call it Domain.&lt;/li&gt;
+  &lt;li&gt;Delete the &lt;code class=&quot;highlighter-rouge&quot;&gt;Class1.cs&lt;/code&gt; that is created for free.&lt;/li&gt;
+  &lt;li&gt;Add the &lt;code class=&quot;highlighter-rouge&quot;&gt;Paramore.Brighter&lt;/code&gt; nuget package to the Domain project.&lt;/li&gt;
+  &lt;li&gt;Add a project reference to the Domain project from the BrighterOnAspNetCore project.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;5-add-command-and-handler-to-your-domain&quot;&gt;5. Add Command and Handler to your domain&lt;/h2&gt;
+&lt;p&gt;A Command is a class that holds all the information needed to make a change to your data model. A Handler performs the actual change to the data model. In this case we’re going to create a Command that creates a &lt;code class=&quot;highlighter-rouge&quot;&gt;Value&lt;/code&gt;, which is simply an integer that you might put into a database.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;In your Domain project, add two folders one called &lt;code class=&quot;highlighter-rouge&quot;&gt;Commands&lt;/code&gt; and one called &lt;code class=&quot;highlighter-rouge&quot;&gt;Handlers&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;In &lt;code class=&quot;highlighter-rouge&quot;&gt;Domain/Commands&lt;/code&gt; add a new class &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;It must implement the &lt;code class=&quot;highlighter-rouge&quot;&gt;IRequest&lt;/code&gt; interface, which is simply an Id for an instance of the command.&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Add an &lt;code class=&quot;highlighter-rouge&quot;&gt;Email&lt;/code&gt; string property and set it in the constructor.&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;using System;
+using Paramore.Brighter;
+
+namespace Domain.Commands
+{
+    public class CreateValueCommand : IRequest
+    {
+        public CreateValueCommand(string value)
+        {
+            Id = Guid.NewGuid();
+            Value = value;
+        }
+
+        public string Value { get; }
+
+        public Guid Id { get; set; }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;In &lt;code class=&quot;highlighter-rouge&quot;&gt;Domain/Handers&lt;/code&gt; add a new class &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt; must extend the base class &lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&amp;lt;CreateValueCommand&amp;gt;&lt;/code&gt;. The generic parameter of &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt; is how we say that this handler is for the &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;We override the &lt;code class=&quot;highlighter-rouge&quot;&gt;Handle()&lt;/code&gt; method, which is where we would put our database update logic.&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;For now, we’re going to simply write to the debug console in Visual Studio.&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;using System.Diagnostics;
+using Domain.Commands;
+using Paramore.Brighter;
+
+namespace Domain.Handlers
+{
+    public class CreateValueCommandHandler  : RequestHandler&amp;lt;CreateValueCommand&amp;gt;
+    {
+        public override CreateValueCommand Handle(CreateValueCommand command)
+        {
+            Debug.WriteLine($&quot;Creating Value {command.Value}&quot;);
+            return base.Handle(command);
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;6-add-brighter-configuration-to-the-service-collection&quot;&gt;6. Add Brighter configuration to the service collection&lt;/h2&gt;
+&lt;p&gt;ASP.NET Core uses a service collection as a dependency injection container. We need to use this because in our API Controller we want to use the &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandProcessor&lt;/code&gt; to create commands. We’ll come onto that next but first we’ll configure ASP.NET to use Brighter.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Open &lt;code class=&quot;highlighter-rouge&quot;&gt;BrighterOnAspNetCore/Startup.cs&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;ConfigureServices&lt;/code&gt; method, add the following lines &lt;em&gt;before&lt;/em&gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;.AddMvc()&lt;/code&gt;&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;services.AddBrighter()
+  .HandlersFromAssemblies(typeof(CreateValueCommandHandler).Assembly);
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This will add all the Handlers in the same assembly as our &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt; to the ASP.NET Core dependency injection container, and perform some default setup. See &lt;a href=&quot;https://github.com/brainwipe/Paramore.Brighter.AspNetCore&quot;&gt;Paramore.Brighter.AspNetCore&lt;/a&gt; for the options that are available.&lt;/p&gt;
+
+&lt;h2 id=&quot;7-add-command-processor-into-our-controller-and-create-a-command&quot;&gt;7. Add Command Processor into our controller and create a command&lt;/h2&gt;
+&lt;p&gt;Commands are all about changing the data in your system, not getting it.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Open &lt;code class=&quot;highlighter-rouge&quot;&gt;BrighterOnAspNetCore/Controllers/ValuesController.cs&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;At the top of the Controller class create the following member variable and constructor:&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private readonly IAmACommandProcessor commandProcessor;
+public ValuesController(IAmACommandProcessor commandProcessor)
+{
+    this.commandProcessor = commandProcessor;
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The interface &lt;code class=&quot;highlighter-rouge&quot;&gt;IAmCommandProcessor&lt;/code&gt; will have been registered with the ASP.NET Core dependency injection in the last step. When the controller is instantiated, it will be injected in, ready built and filled with handlers, ready to use.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;Post()&lt;/code&gt; method, create value command and send it to the &lt;code class=&quot;highlighter-rouge&quot;&gt;commandProcessor&lt;/code&gt;.&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// POST api/values
+[HttpPost(&quot;{value}&quot;)]
+public void Post(string value)
+{
+    var command = new CreateValueCommand(value);
+    commandProcessor.Send(command);
+}
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This is the simplest thing that works; it would be better for the new value we’re posting to the service to be in the Body but for that we would need to introduce JSON and a model or a text/plain formatter. For simplicity sake, we’ll grab it from the URL instead.&lt;/p&gt;
+
+&lt;h2 id=&quot;testing-the-service&quot;&gt;Testing the service&lt;/h2&gt;
+&lt;p&gt;Run the application and then use as HTTP test client (I like &lt;a href=&quot;https://www.getpostman.com/&quot;&gt;Postman&lt;/a&gt; but curl would do!) to POST a request to: &lt;code class=&quot;highlighter-rouge&quot;&gt;http://localhost:58484/api/values/helloworld&lt;/code&gt;, where &lt;code class=&quot;highlighter-rouge&quot;&gt;localhost:58484&lt;/code&gt; is root of your website and &lt;code class=&quot;highlighter-rouge&quot;&gt;helloworld&lt;/code&gt; is the data you’re sending.&lt;/p&gt;
+
+&lt;p&gt;In the Visual Studio Output window, set “Show Output From” to Debug and you should see &lt;code class=&quot;highlighter-rouge&quot;&gt;Creating value helloworld&lt;/code&gt;. This means that the Command has moved through Brighter and Handled by your command Handler.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">In this post you will learn how to get a simple ASP.NET Core 2 API running that uses the Brighter command pattern for sending updates to an in-memory database. Brighter is a library that sits between the API layer and your business logic (and persistance/database layer). This is not production code but the smallest number of steps to get a simple Brighter Command Processor working in ASP.NET Core 2. You can get the completed code from my example BrighterOnAspNetCoreExample repository. Pre-requisites Visual Studio 2017 Command, Query Responsibility Separation CQRS is an architecture pattern where you use a different model to update than you do to query. Martin Fowler does an excellent job of explaining it in detail. Brigher only deals with the Command side, that is the create, update and delete. 1. Create ASP.NET Core 2.0 API Project In Visual Studio, File → New Project → ASP.NET Core In the next window choose Web API I’m going to call the project BrighterOnAspNetCore In the Solution Explorer, right click BrighterOnAspNetCore → Properties In Application Tab, select Target Framework as .NET Core 2.0 and save. 2. Update existing dependencies Right click on the BrighterOnAspNetCore → Manage Nuget Packages Update any existing packages to v2. 3. Add Brighter AspNet Core dependency Still in the Nuget Package Manager window, click “Include Prerelease” Install Paramore.Brighter.AspNetCore by Daniel Stockhammer. (Brighter will be installed too) 4. Create a library to hold your domain This step is not absolutely necessary but will give a better feel of what a solution ready for production would look like. In Solution Explorer, right click the Solution → Add Choose an ASP.NET Core class library, call it Domain. Delete the Class1.cs that is created for free. Add the Paramore.Brighter nuget package to the Domain project. Add a project reference to the Domain project from the BrighterOnAspNetCore project. 5. Add Command and Handler to your domain A Command is a class that holds all the information needed to make a change to your data model. A Handler performs the actual change to the data model. In this case we’re going to create a Command that creates a Value, which is simply an integer that you might put into a database. In your Domain project, add two folders one called Commands and one called Handlers In Domain/Commands add a new class CreateValueCommand. It must implement the IRequest interface, which is simply an Id for an instance of the command. Add an Email string property and set it in the constructor. using System; using Paramore.Brighter; namespace Domain.Commands { public class CreateValueCommand : IRequest { public CreateValueCommand(string value) { Id = Guid.NewGuid(); Value = value; } public string Value { get; } public Guid Id { get; set; } } } In Domain/Handers add a new class CreateValueCommandHandler. CreateValueCommandHandler must extend the base class RequestHandler&amp;lt;CreateValueCommand&amp;gt;. The generic parameter of CreateValueCommand is how we say that this handler is for the CreateValueCommand. We override the Handle() method, which is where we would put our database update logic. For now, we’re going to simply write to the debug console in Visual Studio. using System.Diagnostics; using Domain.Commands; using Paramore.Brighter; namespace Domain.Handlers { public class CreateValueCommandHandler : RequestHandler&amp;lt;CreateValueCommand&amp;gt; { public override CreateValueCommand Handle(CreateValueCommand command) { Debug.WriteLine($&quot;Creating Value {command.Value}&quot;); return base.Handle(command); } } } 6. Add Brighter configuration to the service collection ASP.NET Core uses a service collection as a dependency injection container. We need to use this because in our API Controller we want to use the CommandProcessor to create commands. We’ll come onto that next but first we’ll configure ASP.NET to use Brighter. Open BrighterOnAspNetCore/Startup.cs In the ConfigureServices method, add the following lines before .AddMvc() services.AddBrighter() .HandlersFromAssemblies(typeof(CreateValueCommandHandler).Assembly); This will add all the Handlers in the same assembly as our CreateValueCommandHandler to the ASP.NET Core dependency injection container, and perform some default setup. See Paramore.Brighter.AspNetCore for the options that are available. 7. Add Command Processor into our controller and create a command Commands are all about changing the data in your system, not getting it. Open BrighterOnAspNetCore/Controllers/ValuesController.cs At the top of the Controller class create the following member variable and constructor: private readonly IAmACommandProcessor commandProcessor; public ValuesController(IAmACommandProcessor commandProcessor) { this.commandProcessor = commandProcessor; } The interface IAmCommandProcessor will have been registered with the ASP.NET Core dependency injection in the last step. When the controller is instantiated, it will be injected in, ready built and filled with handlers, ready to use. In the Post() method, create value command and send it to the commandProcessor. // POST api/values [HttpPost(&quot;{value}&quot;)] public void Post(string value) { var command = new CreateValueCommand(value); commandProcessor.Send(command); } This is the simplest thing that works; it would be better for the new value we’re posting to the service to be in the Body but for that we would need to introduce JSON and a model or a text/plain formatter. For simplicity sake, we’ll grab it from the URL instead. Testing the service Run the application and then use as HTTP test client (I like Postman but curl would do!) to POST a request to: http://localhost:58484/api/values/helloworld, where localhost:58484 is root of your website and helloworld is the data you’re sending. In the Visual Studio Output window, set “Show Output From” to Debug and you should see Creating value helloworld. This means that the Command has moved through Brighter and Handled by your command Handler.</summary></entry><entry><title type="html">Adding an nginx container for static files in my VS2017 solution</title><link href="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/" rel="alternate" type="text/html" title="Adding an nginx container for static files in my VS2017 solution" /><published>2017-07-28T09:00:00+01:00</published><updated>2017-07-28T09:00:00+01:00</updated><id>http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose</id><content type="html" xml:base="http://localhost:4000/docker/linux/vs2017/2017/07/28/nginx-vs-docker-compose/">&lt;p&gt;I am using Visual Studio with a docker-compose project to handle the building and running of my docker instances. I want the developer to download the repository, hit F5 and for it to just work. I already have a few linux containers running aspnetcore projects and now I wanted a simple container to serve static files. The static file I needed was a simple HTML page that would call an authentication API. I call it &lt;em&gt;mcotestclient&lt;/em&gt;.&lt;/p&gt;
 
 &lt;p&gt;This is the journey I had and the problems I found.&lt;/p&gt;
 
