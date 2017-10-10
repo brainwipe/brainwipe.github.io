@@ -46,45 +46,49 @@ A Command is a class that holds all the information needed to make a change to y
 - It must implement the `IRequest` interface, which is simply an Id for an instance of the command.
 - Add an `Email` string property and set it in the constructor.
 
-      using System;
-      using Paramore.Brighter;
+```csharp
+using System;
+using Paramore.Brighter;
 
-      namespace Domain.Commands
-      {
-          public class CreateValueCommand : IRequest
-          {
-              public CreateValueCommand(string value)
-              {
-                  Id = Guid.NewGuid();
-                  Value = value;
-              }
+namespace Domain.Commands
+{
+    public class CreateValueCommand : IRequest
+    {
+        public CreateValueCommand(string value)
+        {
+            Id = Guid.NewGuid();
+            Value = value;
+        }
 
-              public string Value { get; }
+        public string Value { get; }
 
-              public Guid Id { get; set; }
-          }
-      }
+        public Guid Id { get; set; }
+    }
+}
+```
 
 - In `Domain/Handers` add a new class `CreateValueCommandHandler`.
 - `CreateValueCommandHandler` must extend the base class `RequestHandler<CreateValueCommand>`. The generic parameter of `CreateValueCommand` is how we say that this handler is for the `CreateValueCommand`.
 - We override the `Handle()` method, which is where we would put our database update logic.
 - For now, we're going to simply write to the debug console in Visual Studio.
 
-      using System.Diagnostics;
-      using Domain.Commands;
-      using Paramore.Brighter;
+```csharp
+using System.Diagnostics;
+using Domain.Commands;
+using Paramore.Brighter;
 
-      namespace Domain.Handlers
-      {
-          public class CreateValueCommandHandler  : RequestHandler<CreateValueCommand>
-          {
-              public override CreateValueCommand Handle(CreateValueCommand command)
-              {
-                  Debug.WriteLine($"Creating Value {command.Value}");
-                  return base.Handle(command);
-              }
-          }
-      }
+namespace Domain.Handlers
+{
+    public class CreateValueCommandHandler  : RequestHandler<CreateValueCommand>
+    {
+        public override CreateValueCommand Handle(CreateValueCommand command)
+        {
+            Debug.WriteLine($"Creating Value {command.Value}");
+            return base.Handle(command);
+        }
+    }
+}
+```
 
 ## 6. Add Brighter configuration to the service collection
 ASP.NET Core uses a service collection as a dependency injection container. We need to use this because in our API Controller we want to use the `CommandProcessor` to create commands. We'll come onto that next but first we'll configure ASP.NET to use Brighter.
@@ -92,8 +96,10 @@ ASP.NET Core uses a service collection as a dependency injection container. We n
 - Open `BrighterOnAspNetCore/Startup.cs`
 - In the `ConfigureServices` method, add the following lines _before_ `.AddMvc()`
 
-      services.AddBrighter()
-        .HandlersFromAssemblies(typeof(CreateValueCommandHandler).Assembly);
+```csharp
+    services.AddBrighter()
+    .HandlersFromAssemblies(typeof(CreateValueCommandHandler).Assembly);
+```
 
 This will add all the Handlers in the same assembly as our `CreateValueCommandHandler` to the ASP.NET Core dependency injection container, and perform some default setup. See [Paramore.Brighter.AspNetCore](https://github.com/brainwipe/Paramore.Brighter.AspNetCore) for the options that are available.
 
@@ -103,23 +109,27 @@ Commands are all about changing the data in your system, not getting it.
 - Open `BrighterOnAspNetCore/Controllers/ValuesController.cs`
 - At the top of the Controller class create the following member variable and constructor:
 
-      private readonly IAmACommandProcessor commandProcessor;
-      public ValuesController(IAmACommandProcessor commandProcessor)
-      {
-          this.commandProcessor = commandProcessor;
-      }
+```csharp
+private readonly IAmACommandProcessor commandProcessor;
+public ValuesController(IAmACommandProcessor commandProcessor)
+{
+    this.commandProcessor = commandProcessor;
+}
+```
 
 The interface `IAmCommandProcessor` will have been registered with the ASP.NET Core dependency injection in the last step. When the controller is instantiated, it will be injected in, ready built and filled with handlers, ready to use.
 
 - In the `Post()` method, create value command and send it to the `commandProcessor`.
 
-      // POST api/values
-      [HttpPost("{value}")]
-      public void Post(string value)
-      {
-          var command = new CreateValueCommand(value);
-          commandProcessor.Send(command);
-      }
+```csharp
+// POST api/values
+[HttpPost("{value}")]
+public void Post(string value)
+{
+    var command = new CreateValueCommand(value);
+    commandProcessor.Send(command);
+}
+```
 
 This is the simplest thing that works; it would be better for the new value we're posting to the service to be in the Body but for that we would need to introduce JSON and a model or a text/plain formatter. For simplicity sake, we'll grab it from the URL instead.
 

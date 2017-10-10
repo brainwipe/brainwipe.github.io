@@ -1,5 +1,135 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-10-04T17:03:46+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
-</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Using Brighter on ASP.NET Core 2.0 API</title><link href="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/" rel="alternate" type="text/html" title="Using Brighter on ASP.NET Core 2.0 API" /><published>2017-10-04T09:00:00+01:00</published><updated>2017-10-04T09:00:00+01:00</updated><id>http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore</id><content type="html" xml:base="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/">&lt;p&gt;In this post you will learn how to get a simple ASP.NET Core 2 API running that uses the &lt;a href=&quot;https://github.com/BrighterCommand/Brighter&quot;&gt;Brighter&lt;/a&gt; command pattern for sending updates to an in-memory database. Brighter is a library that sits between the API layer and your business logic (and persistance/database layer). This is not production code but the smallest number of steps to get a simple Brighter Command Processor working in ASP.NET Core 2.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.4.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-10-10T16:57:07+01:00</updated><id>http://localhost:4000/</id><title type="html">Rob Lang</title><subtitle>Software development and artificial intelligence
+</subtitle><author><name>Rob Lang</name></author><entry><title type="html">Using Dependency Injection on the .NET Core Command Line</title><link href="http://localhost:4000/asp.net/core/cli/commandline/di/2017/10/10/di-on-dotnet-core-cli/" rel="alternate" type="text/html" title="Using Dependency Injection on the .NET Core Command Line" /><published>2017-10-10T09:00:00+01:00</published><updated>2017-10-10T09:00:00+01:00</updated><id>http://localhost:4000/asp.net/core/cli/commandline/di/2017/10/10/di-on-dotnet-core-cli</id><content type="html" xml:base="http://localhost:4000/asp.net/core/cli/commandline/di/2017/10/10/di-on-dotnet-core-cli/">&lt;p&gt;Developers should build tools to help them develop code. If you are building an ASP.NET web app then I can recommend building a companion command line tool for you to use. The command line tool is there to help you understand system state or show data in your system in such a way that makes sense for you. It’s not for release, it’s to make you more effective. It’s the one thing I wish I’ve always done.&lt;/p&gt;
+
+&lt;p&gt;I like to include it in the same solution as the main application so that it can be built and kept up to date with the system. I also use it to call the service layer directly (by-passing the web API) and use the real entity objects. I want to be able to use the same dependency injection registration process in the command line&lt;/p&gt;
+
+&lt;p&gt;I’m going to assume you know what dependency injection is. If not, then please do read a bit of &lt;a href=&quot;https://martinfowler.com/articles/injection.html&quot;&gt;Martin Fowler&lt;/a&gt; (I’m a bit of a fan).&lt;/p&gt;
+
+&lt;h2 id=&quot;get-the-code&quot;&gt;Get the code&lt;/h2&gt;
+
+&lt;p&gt;For those wanting to jump in, check out the &lt;a href=&quot;https://github.com/brainwipe/DIOnDotNetCoreCLI&quot;&gt;GitHub Repo DIOnDotNetCoreCLI&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;net-commandlineutils&quot;&gt;.NET CommandLineUtils&lt;/h2&gt;
+
+&lt;p&gt;.NET Core gives us a new challenge as we can create command line apps that run on both Linux and Windows, making them better for fitting into your tool chains. Microsoft originally created the &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineUtils&lt;/code&gt; DLL but have discontinued support. Instead Nate McMaster (of the ASP.NET team) &lt;a href=&quot;https://github.com/aspnet/Common/pull/261&quot;&gt;has forked the code&lt;/a&gt; and will maintain it as a &lt;a href=&quot;https://github.com/natemcmaster/CommandLineUtils&quot;&gt;personal project&lt;/a&gt;. Thank you to Nate for taking on this ace library!&lt;/p&gt;
+
+&lt;h2 id=&quot;anonymous-functions-vs-separate-command-classes&quot;&gt;Anonymous functions vs Separate Command Classes&lt;/h2&gt;
+
+&lt;p&gt;If you command line application is simple then I recommend using the &lt;a href=&quot;https://github.com/natemcmaster/CommandLineUtils#usage&quot;&gt;anonymous function method&lt;/a&gt; of building your tools.&lt;/p&gt;
+
+&lt;p&gt;I prefer to split out each command into separate classes. Mostly because I tend to have lots of commands in a single console project. For example &lt;code class=&quot;highlighter-rouge&quot;&gt;c:/&amp;gt;myapp -say &quot;hello world&quot;&lt;/code&gt; on the commandline would be in a class &lt;code class=&quot;highlighter-rouge&quot;&gt;SayCommand&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I’m going to assume that you’re following separate command classes for this tutorial.&lt;/p&gt;
+
+&lt;h2 id=&quot;1-example-console-app&quot;&gt;1. Example Console App&lt;/h2&gt;
+&lt;p&gt;For this example, we have a service that prints out a Shakespear Quote (&lt;code class=&quot;highlighter-rouge&quot;&gt;QuotesService&lt;/code&gt;) and a service that wraps text with some ascii art (&lt;code class=&quot;highlighter-rouge&quot;&gt;FormatterService&lt;/code&gt;). I want to use a command line application to call an exteronal service library. For most of my commands I want them to be of the form: &lt;code class=&quot;highlighter-rouge&quot;&gt;c:/&amp;gt;myapp &amp;lt;command name&amp;gt; &amp;lt;options&amp;gt;&lt;/code&gt;. The CommandLineUtils library supports multiple levels but&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Create a new .NET Core Console app: New Project → Visual C#/.NET Core/Console App (.NET COre)&lt;/li&gt;
+  &lt;li&gt;Right click project → Manage nuget packages&lt;/li&gt;
+  &lt;li&gt;Click Browse, install &lt;code class=&quot;highlighter-rouge&quot;&gt;McMaster.Extensions.CommandLineUtils&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Also install &lt;code class=&quot;highlighter-rouge&quot;&gt;Microsoft.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;2-add-your-services&quot;&gt;2. Add your services&lt;/h2&gt;
+&lt;p&gt;When you’re doing this for your application then you add in a reference for your service library. I’m not going to go through how to make one here, you can &lt;a href=&quot;https://github.com/brainwipe/DIOnDotNetCoreCLI/tree/master/DIOnDotNetCoreCLI.Services&quot;&gt;check out the code on Github&lt;/a&gt;. It’s the next bit we want to spend time on.&lt;/p&gt;
+
+&lt;h2 id=&quot;3-create-a-root-command-line-application&quot;&gt;3. Create a root Command Line Application&lt;/h2&gt;
+&lt;p&gt;The core class of the CommandLineUtils library is the &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineApplication&lt;/code&gt;. You need to create at least one &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineApplication&lt;/code&gt; and then attach commands to it as children. We’re going to create our own version that can handle the dependency injection.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Create a new class &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineApplicationWithDI&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;CommandLineApplicationWithDI&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CommandLineApplication&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;readonly&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;IServiceProvider&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;CommandLineApplicationWithDI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IServiceProvider&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;RegisterCommands&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;RegisterCommands&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;foreach&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;command&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GetServices&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ICommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;())&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commandLineApp&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;command&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CommandLineApplication&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+            &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;commandLineApp&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;k&quot;&gt;throw&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;InvalidCastException&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Commands must inherit from ICommand and CommandLineApplication&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+            &lt;span class=&quot;n&quot;&gt;Commands&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;commandLineApp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The constructor takes in the &lt;code class=&quot;highlighter-rouge&quot;&gt;ServiceProvider&lt;/code&gt;, which is Microsoft’s Dependency Injection container. We’ll come onto that later. It then uses this to find all the classes that implement &lt;code class=&quot;highlighter-rouge&quot;&gt;ICommand&lt;/code&gt;, which is an interface we need to register our commands to. I’d prefer to do something like &lt;code class=&quot;highlighter-rouge&quot;&gt;serviceProvider.GetServices&amp;lt;CommandLineApplication&amp;gt;&lt;/code&gt; but we can’t register types under a concrete class and there is no interface provided in &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineUtils&lt;/code&gt; to use. We need to make our own:&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;internal&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ICommand&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;That’s it, only for dependency injection purporses.&lt;/p&gt;
+
+&lt;h2 id=&quot;4-create-a-command&quot;&gt;4. Create a Command&lt;/h2&gt;
+&lt;p&gt;Our &lt;code class=&quot;highlighter-rouge&quot;&gt;QuoteCommand&lt;/code&gt; class will encapuslate everything about our command and make use of the services that will be injected automatically. It must inherit from &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineApplication&lt;/code&gt; to make use of the CommandLineUtils functionality and it needs our &lt;code class=&quot;highlighter-rouge&quot;&gt;ICommand&lt;/code&gt; interface so that it can be dependency injected.&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;internal&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;QuoteCommand&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CommandLineApplication&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ICommand&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;readonly&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;IQuotesService&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;quotesService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;QuoteCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IQuotesService&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;quotesService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;quotesService&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;quotesService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;quote&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Description&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;gives you a bit of Shakespear&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;HelpOption&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-? | -h | --help&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;OnExecute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Execute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Execute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Console&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;quotesService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Shakespear&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;5-finally---create-the-di-container-and-command-line-app&quot;&gt;5. Finally - Create the DI container and Command Line App&lt;/h2&gt;
+&lt;p&gt;In Program.cs, remove the Hello World line and then create the dependency injection container:&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ServiceCollection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;AddMyServices&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AddSingleton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ICommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QuoteCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;BuildServiceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AddMyServices&lt;/code&gt; is a &lt;a href=&quot;DIOnDotNetCoreCLI/DIOnDotNetCoreCLI.Services/ServiceCollectionExtensions.cs&quot;&gt;ServiceCollection Extension&lt;/a&gt; inside my service library. It is responsible for adding its own services to the collection. We then add the &lt;code class=&quot;highlighter-rouge&quot;&gt;QuoteCommand&lt;/code&gt; on as a Singleton (one per lifetime of the console application) and build it.&lt;/p&gt;
+
+&lt;p&gt;We then pass it into our &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandLineApplicationWithDI&lt;/code&gt; like so:&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commandLineApp&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;CommandLineApplicationWithDI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serviceProvider&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;And execute the command with the arguments that come in on the command line.&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;commandLineApp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Execute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;other-di-containers&quot;&gt;Other DI Containers&lt;/h2&gt;
+&lt;p&gt;Microsoft’s DI container is really just a set of interfaces and has implementations for other DI containers such as &lt;a href=&quot;https://github.com/structuremap/StructureMap.Microsoft.DependencyInjection&quot;&gt;StructureMap&lt;/a&gt;. With StructureMap, you can add types by convention, so it can automatically find the implementations of &lt;code class=&quot;highlighter-rouge&quot;&gt;ICommand&lt;/code&gt; for you.&lt;/p&gt;</content><author><name>Rob Lang</name></author><summary type="html">Developers should build tools to help them develop code. If you are building an ASP.NET web app then I can recommend building a companion command line tool for you to use. The command line tool is there to help you understand system state or show data in your system in such a way that makes sense for you. It’s not for release, it’s to make you more effective. It’s the one thing I wish I’ve always done. I like to include it in the same solution as the main application so that it can be built and kept up to date with the system. I also use it to call the service layer directly (by-passing the web API) and use the real entity objects. I want to be able to use the same dependency injection registration process in the command line I’m going to assume you know what dependency injection is. If not, then please do read a bit of Martin Fowler (I’m a bit of a fan). Get the code For those wanting to jump in, check out the GitHub Repo DIOnDotNetCoreCLI. .NET CommandLineUtils .NET Core gives us a new challenge as we can create command line apps that run on both Linux and Windows, making them better for fitting into your tool chains. Microsoft originally created the CommandLineUtils DLL but have discontinued support. Instead Nate McMaster (of the ASP.NET team) has forked the code and will maintain it as a personal project. Thank you to Nate for taking on this ace library! Anonymous functions vs Separate Command Classes If you command line application is simple then I recommend using the anonymous function method of building your tools. I prefer to split out each command into separate classes. Mostly because I tend to have lots of commands in a single console project. For example c:/&amp;gt;myapp -say &quot;hello world&quot; on the commandline would be in a class SayCommand. I’m going to assume that you’re following separate command classes for this tutorial. 1. Example Console App For this example, we have a service that prints out a Shakespear Quote (QuotesService) and a service that wraps text with some ascii art (FormatterService). I want to use a command line application to call an exteronal service library. For most of my commands I want them to be of the form: c:/&amp;gt;myapp &amp;lt;command name&amp;gt; &amp;lt;options&amp;gt;. The CommandLineUtils library supports multiple levels but Create a new .NET Core Console app: New Project → Visual C#/.NET Core/Console App (.NET COre) Right click project → Manage nuget packages Click Browse, install McMaster.Extensions.CommandLineUtils Also install Microsoft.Extensions.DependencyInjection 2. Add your services When you’re doing this for your application then you add in a reference for your service library. I’m not going to go through how to make one here, you can check out the code on Github. It’s the next bit we want to spend time on. 3. Create a root Command Line Application The core class of the CommandLineUtils library is the CommandLineApplication. You need to create at least one CommandLineApplication and then attach commands to it as children. We’re going to create our own version that can handle the dependency injection. Create a new class CommandLineApplicationWithDI public class CommandLineApplicationWithDI : CommandLineApplication { private readonly IServiceProvider serviceProvider; public CommandLineApplicationWithDI(IServiceProvider serviceProvider) { this.serviceProvider = serviceProvider; RegisterCommands(); } private void RegisterCommands() { foreach (var command in serviceProvider.GetServices&amp;lt;ICommand&amp;gt;()) { var commandLineApp = command as CommandLineApplication; if (commandLineApp == null) { throw new InvalidCastException(&quot;Commands must inherit from ICommand and CommandLineApplication&quot;); } Commands.Add(commandLineApp); } } } The constructor takes in the ServiceProvider, which is Microsoft’s Dependency Injection container. We’ll come onto that later. It then uses this to find all the classes that implement ICommand, which is an interface we need to register our commands to. I’d prefer to do something like serviceProvider.GetServices&amp;lt;CommandLineApplication&amp;gt; but we can’t register types under a concrete class and there is no interface provided in CommandLineUtils to use. We need to make our own: internal interface ICommand { } That’s it, only for dependency injection purporses. 4. Create a Command Our QuoteCommand class will encapuslate everything about our command and make use of the services that will be injected automatically. It must inherit from CommandLineApplication to make use of the CommandLineUtils functionality and it needs our ICommand interface so that it can be dependency injected. internal class QuoteCommand : CommandLineApplication, ICommand { private readonly IQuotesService quotesService; public QuoteCommand(IQuotesService quotesService) { this.quotesService = quotesService; Name = &quot;quote&quot;; Description = &quot;gives you a bit of Shakespear&quot;; HelpOption(&quot;-? | -h | --help&quot;); OnExecute((Func&amp;lt;int&amp;gt;)Execute); } public int Execute() { Console.WriteLine(quotesService.Shakespear()); return 0; } } 5. Finally - Create the DI container and Command Line App In Program.cs, remove the Hello World line and then create the dependency injection container: var serviceProvider = new ServiceCollection() .AddMyServices() .AddSingleton&amp;lt;ICommand, QuoteCommand&amp;gt;() .BuildServiceProvider(); AddMyServices is a ServiceCollection Extension inside my service library. It is responsible for adding its own services to the collection. We then add the QuoteCommand on as a Singleton (one per lifetime of the console application) and build it. We then pass it into our CommandLineApplicationWithDI like so: var commandLineApp = new CommandLineApplicationWithDI(serviceProvider); And execute the command with the arguments that come in on the command line. commandLineApp.Execute(args); Other DI Containers Microsoft’s DI container is really just a set of interfaces and has implementations for other DI containers such as StructureMap. With StructureMap, you can add types by convention, so it can automatically find the implementations of ICommand for you.</summary></entry><entry><title type="html">Using Brighter on ASP.NET Core 2.0 API</title><link href="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/" rel="alternate" type="text/html" title="Using Brighter on ASP.NET Core 2.0 API" /><published>2017-10-04T09:00:00+01:00</published><updated>2017-10-04T09:00:00+01:00</updated><id>http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore</id><content type="html" xml:base="http://localhost:4000/asp.net/core/brighter/cqrs/2017/10/04/brighter-on-aspnetcore/">&lt;p&gt;In this post you will learn how to get a simple ASP.NET Core 2 API running that uses the &lt;a href=&quot;https://github.com/BrighterCommand/Brighter&quot;&gt;Brighter&lt;/a&gt; command pattern for sending updates to an in-memory database. Brighter is a library that sits between the API layer and your business logic (and persistance/database layer). This is not production code but the smallest number of steps to get a simple Brighter Command Processor working in ASP.NET Core 2.&lt;/p&gt;
 
 &lt;p&gt;You can get the completed code from my example &lt;a href=&quot;https://github.com/brainwipe/BrighterOnAspNetCoreExample&quot;&gt;BrighterOnAspNetCoreExample&lt;/a&gt; repository.&lt;/p&gt;
 
@@ -50,70 +180,67 @@
   &lt;li&gt;In your Domain project, add two folders one called &lt;code class=&quot;highlighter-rouge&quot;&gt;Commands&lt;/code&gt; and one called &lt;code class=&quot;highlighter-rouge&quot;&gt;Handlers&lt;/code&gt;&lt;/li&gt;
   &lt;li&gt;In &lt;code class=&quot;highlighter-rouge&quot;&gt;Domain/Commands&lt;/code&gt; add a new class &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt;.&lt;/li&gt;
   &lt;li&gt;It must implement the &lt;code class=&quot;highlighter-rouge&quot;&gt;IRequest&lt;/code&gt; interface, which is simply an Id for an instance of the command.&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Add an &lt;code class=&quot;highlighter-rouge&quot;&gt;Email&lt;/code&gt; string property and set it in the constructor.&lt;/p&gt;
+  &lt;li&gt;Add an &lt;code class=&quot;highlighter-rouge&quot;&gt;Email&lt;/code&gt; string property and set it in the constructor.&lt;/li&gt;
+&lt;/ul&gt;
 
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;using System;
-using Paramore.Brighter;
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Paramore.Brighter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
-namespace Domain.Commands
-{
-    public class CreateValueCommand : IRequest
-    {
-        public CreateValueCommand(string value)
-        {
-            Id = Guid.NewGuid();
-            Value = value;
-        }
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Domain.Commands&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;CreateValueCommand&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;IRequest&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;CreateValueCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Guid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;NewGuid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 
-        public string Value { get; }
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 
-        public Guid Id { get; set; }
-    }
-}
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Guid&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
-    &lt;/div&gt;
-  &lt;/li&gt;
+&lt;/div&gt;
+
+&lt;ul&gt;
   &lt;li&gt;In &lt;code class=&quot;highlighter-rouge&quot;&gt;Domain/Handers&lt;/code&gt; add a new class &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt;.&lt;/li&gt;
   &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt; must extend the base class &lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&amp;lt;CreateValueCommand&amp;gt;&lt;/code&gt;. The generic parameter of &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt; is how we say that this handler is for the &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommand&lt;/code&gt;.&lt;/li&gt;
   &lt;li&gt;We override the &lt;code class=&quot;highlighter-rouge&quot;&gt;Handle()&lt;/code&gt; method, which is where we would put our database update logic.&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;For now, we’re going to simply write to the debug console in Visual Studio.&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;using System.Diagnostics;
-using Domain.Commands;
-using Paramore.Brighter;
-
-namespace Domain.Handlers
-{
-    public class CreateValueCommandHandler  : RequestHandler&amp;lt;CreateValueCommand&amp;gt;
-    {
-        public override CreateValueCommand Handle(CreateValueCommand command)
-        {
-            Debug.WriteLine($&quot;Creating Value {command.Value}&quot;);
-            return base.Handle(command);
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-    &lt;/div&gt;
-  &lt;/li&gt;
+  &lt;li&gt;For now, we’re going to simply write to the debug console in Visual Studio.&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;System.Diagnostics&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Domain.Commands&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Paramore.Brighter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Domain.Handlers&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;CreateValueCommandHandler&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RequestHandler&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;CreateValueCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CreateValueCommand&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;CreateValueCommand&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Debug&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Creating Value {command.Value}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;h2 id=&quot;6-add-brighter-configuration-to-the-service-collection&quot;&gt;6. Add Brighter configuration to the service collection&lt;/h2&gt;
 &lt;p&gt;ASP.NET Core uses a service collection as a dependency injection container. We need to use this because in our API Controller we want to use the &lt;code class=&quot;highlighter-rouge&quot;&gt;CommandProcessor&lt;/code&gt; to create commands. We’ll come onto that next but first we’ll configure ASP.NET to use Brighter.&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;Open &lt;code class=&quot;highlighter-rouge&quot;&gt;BrighterOnAspNetCore/Startup.cs&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;ConfigureServices&lt;/code&gt; method, add the following lines &lt;em&gt;before&lt;/em&gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;.AddMvc()&lt;/code&gt;&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;services.AddBrighter()
-  .HandlersFromAssemblies(typeof(CreateValueCommandHandler).Assembly);
-&lt;/code&gt;&lt;/pre&gt;
-    &lt;/div&gt;
-  &lt;/li&gt;
+  &lt;li&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;ConfigureServices&lt;/code&gt; method, add the following lines &lt;em&gt;before&lt;/em&gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;.AddMvc()&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;n&quot;&gt;services&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;AddBrighter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;HandlersFromAssemblies&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;typeof&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;CreateValueCommandHandler&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Assembly&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;This will add all the Handlers in the same assembly as our &lt;code class=&quot;highlighter-rouge&quot;&gt;CreateValueCommandHandler&lt;/code&gt; to the ASP.NET Core dependency injection container, and perform some default setup. See &lt;a href=&quot;https://github.com/brainwipe/Paramore.Brighter.AspNetCore&quot;&gt;Paramore.Brighter.AspNetCore&lt;/a&gt; for the options that are available.&lt;/p&gt;
 
@@ -122,36 +249,32 @@ namespace Domain.Handlers
 
 &lt;ul&gt;
   &lt;li&gt;Open &lt;code class=&quot;highlighter-rouge&quot;&gt;BrighterOnAspNetCore/Controllers/ValuesController.cs&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;At the top of the Controller class create the following member variable and constructor:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private readonly IAmACommandProcessor commandProcessor;
-public ValuesController(IAmACommandProcessor commandProcessor)
-{
-    this.commandProcessor = commandProcessor;
-}
-&lt;/code&gt;&lt;/pre&gt;
-    &lt;/div&gt;
-  &lt;/li&gt;
+  &lt;li&gt;At the top of the Controller class create the following member variable and constructor:&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;readonly&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;IAmACommandProcessor&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commandProcessor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ValuesController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IAmACommandProcessor&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commandProcessor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;commandProcessor&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commandProcessor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;The interface &lt;code class=&quot;highlighter-rouge&quot;&gt;IAmCommandProcessor&lt;/code&gt; will have been registered with the ASP.NET Core dependency injection in the last step. When the controller is instantiated, it will be injected in, ready built and filled with handlers, ready to use.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;Post()&lt;/code&gt; method, create value command and send it to the &lt;code class=&quot;highlighter-rouge&quot;&gt;commandProcessor&lt;/code&gt;.&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// POST api/values
-[HttpPost(&quot;{value}&quot;)]
-public void Post(string value)
-{
-    var command = new CreateValueCommand(value);
-    commandProcessor.Send(command);
-}
-&lt;/code&gt;&lt;/pre&gt;
-    &lt;/div&gt;
-  &lt;/li&gt;
+  &lt;li&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;Post()&lt;/code&gt; method, create value command and send it to the &lt;code class=&quot;highlighter-rouge&quot;&gt;commandProcessor&lt;/code&gt;.&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// POST api/values
+&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;[HttpPost(&quot;{value}&quot;)]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Post&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;command&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;CreateValueCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;commandProcessor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;This is the simplest thing that works; it would be better for the new value we’re posting to the service to be in the Body but for that we would need to introduce JSON and a model or a text/plain formatter. For simplicity sake, we’ll grab it from the URL instead.&lt;/p&gt;
 
