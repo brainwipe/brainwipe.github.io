@@ -132,3 +132,7 @@ commandLineApp.Execute(args);
 
 ## Other DI Containers
 Microsoft's DI container is really just a set of interfaces and has implementations for other DI containers such as [StructureMap](https://github.com/structuremap/StructureMap.Microsoft.DependencyInjection). With StructureMap, you can add types by convention, so it can automatically find the implementations of `ICommand` for you.
+
+## Further Reading
+- [Andrew Lock - Using dependency injection in a .Net Core console application](https://andrewlock.net/using-dependency-injection-in-a-net-core-console-application/). Has a handy section on logging.
+- [Tommy Long](http://blog.devbot.net/console-services/). Implements DI at the options level.
