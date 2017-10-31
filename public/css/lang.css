@@ -34,3 +34,24 @@ a.label:focus {
 .label:empty {
   display: none;
 }
+
+.highlight {
+  white-space: pre;
+  overflow:auto;
+  font-size:.75rem;
+}
+
+kbd {
+  display: inline-block;
+  margin: 0 .1em;
+  padding: .1em .6em;
+  font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
+  font-size: 13px;
+  color: #242729;
+  text-shadow: 0 1px 0 #FFF;
+  background-color: #e1e3e5;
+  border: 1px solid #adb3b9;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(12,13,14,0.2), 0 0 0 2px #FFF inset;
+  white-space: nowrap;
+}
