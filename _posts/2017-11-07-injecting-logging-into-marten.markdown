@@ -92,7 +92,9 @@ Open `Startup.cs` and add two new private methods:
 ```cs
 private static void AddDocumentStore(IServiceCollection services)
 {
-    services.AddSingleton<IDocumentStore>(provider => DocumentStore.For(
+    services
+        .AddSingleton<IMartenLogger, DocumentStoreLogger>()
+        .AddSingleton<IDocumentStore>(provider => DocumentStore.For(
         o =>
         {
             o.Logger(provider.GetService<IMartenLogger>());
@@ -100,28 +102,16 @@ private static void AddDocumentStore(IServiceCollection services)
             o.AutoCreateSchemaObjects = AutoCreate.All;
             o.DatabaseSchemaName = "projections";
         }))
-        .AddScoped(provider => 
-            new DocumentStoreLogger(
-                provider.GetService<ILogger<DocumentStore>>()))
-        .AddScoped(DocumentSessionFactory);
-}
-
-private static IDocumentSession DocumentSessionFactory(
-    IServiceProvider serviceProvider)
-{
-    var documentStore = serviceProvider.GetService<IDocumentStore>();
-    var session = documentStore.LightweightSession();
-    session.Logger = serviceProvider.GetService<DocumentStoreLogger>();
-    return session;
+        .AddScoped<IDocumentSession>(provider => provider.GetService<IDocumentStore>().LightweightSession());
 }
 ```
 
 You can then call `AddDocumentStore(...)` from your `ConfigureServices()` method in `Startup.cs`.
 
 ### Explanation
-First, we add a Document Store as a singleton. I have hard coded the connection string but I recommend putting that in the `appSettings` configuration ([more](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration?tabs=basicconfiguration)). We're going to let Marten create a new schema in Postgres called `projections`. We then add our custom Marten logger (`DocumentStoreLogger`), to do that we use a lamda to act as an inline factory. When the Document Store Logger class is needed then it will be constructed, passing in a the ILogger instance from the service provider.
+First, we add out custom Marten logger `DocumentStoreLogger` as the IMartenLogger, which will be used for document store level logging. Then we add Document Store as a singleton, giving it the Marten Store logger we just registered. I have hard coded the connection string but I recommend putting that in the `appSettings` configuration ([more](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration?tabs=basicconfiguration)). We're going to let Marten create a new schema in Postgres called `projections`.
 
-Finally we add the `DocumentSessionFactory`, which is called when a new session is needed. I have added it as `AddScoped` because we only want the database session available for a single request (find out more about [service lifetimes here](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)).
+Finally, we add a lamda that will construct a Lightweight Session when IDocumentSession is injected. This will log entries on an individual session level. As such, we want this to be Scoped because we want it to be per request.
 
 We are creating a `LightweightSession` because I want to be able to read and write documents and we assign a logger before handing it back.
 
