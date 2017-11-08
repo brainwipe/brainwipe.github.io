@@ -8,7 +8,7 @@ categories: dotnet core marten
 
 Marten supports two ways to log output: by listening to events on the store or by implementing `IMartenLogger` or `IMartenSessionLogger` (or both). When using the logger interfaces, you must set them either when the document store is created or when a session is created.
 
-Before I continue, I'd like to give a thanks to [Jeremy D. Miller](https://jeremydmiller.com/) himself for pointing me in this direction. Marten is well laid out, so I had an inkling that this was the right way to go but it was great to have confirmation from the mind behind Marten!
+Before I continue, I'd like to give a thanks to [Jeremy D. Miller](https://jeremydmiller.com/) himself for pointing me in this direction. Marten is well laid out, so I had an inkling that this was the right way to go but it was great to have confirmation from the mind behind Marten! Also thanks to [James Hopper](https://github.com/jimgolfgti) for his feedback, I have implemented his improvements.
 
 ## Using Dependency Injection
 I want to be able to use dependency injection to manage the document session. This is so that for every request on my ASP.NET Core controller I have a single session.
@@ -92,12 +92,13 @@ Open `Startup.cs` and add two new private methods:
 ```cs
 private static void AddDocumentStore(IServiceCollection services)
 {
-    services.AddSingleton<IDocumentStore>(DocumentStore.For(
-        s =>
+    services.AddSingleton<IDocumentStore>(provider => DocumentStore.For(
+        o =>
         {
-            s.Connection("Host=localhost;Port=5432;Database=public;User Id=user;Password=password;Pooling=true;Search Path=projections");
-            s.AutoCreateSchemaObjects = AutoCreate.All;
-            s.DatabaseSchemaName = "projections";
+            o.Logger(provider.GetService<IMartenLogger>());
+            o.Connection("Host=localhost;Port=5432;Database=public;User Id=user;Password=password;Pooling=true;Search Path=projections");
+            o.AutoCreateSchemaObjects = AutoCreate.All;
+            o.DatabaseSchemaName = "projections";
         }))
         .AddScoped(provider => 
             new DocumentStoreLogger(
