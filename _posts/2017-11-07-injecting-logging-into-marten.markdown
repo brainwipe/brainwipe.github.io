@@ -51,7 +51,6 @@ namespace MyApp
         {
             logger.LogInformation("Executing DDL change:");
             logger.LogInformation(sql);
-            logger.LogInformation();
         }
 
         public void LogSuccess(NpgsqlCommand command)
@@ -71,7 +70,7 @@ namespace MyApp
             {
                 logger.LogCritical($"  {p.ParameterName}: {p.Value}");
             }
-            logger.LogCritical(ex);
+            logger.LogCritical(ex.Message);
         }
 
         public void RecordSavedChanges(
