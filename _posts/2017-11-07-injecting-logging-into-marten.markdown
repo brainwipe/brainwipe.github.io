@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Logging in .NET Core 2 and Marten"
-date: 2017-11-07 10:00:00 +01:00
+title: "Injecting logger into Marten"
+date: 2019-11-07 10:00:00 +01:00
 categories: dotnet core marten
 ---
 [Marten](http://jasperfx.github.io/marten/) is a document database that uses Postgres, it's fast and easy to use. I am using it as a projection store. In this post we're going to get the inbuilt Marten logger to use the Microsoft `ILogger` class. I am using Marten 2.3.2 in this blog post.
