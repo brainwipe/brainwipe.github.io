@@ -2,7 +2,7 @@
 layout: post
 title: ".NET Core Linux Daemon"
 date: 2018-07-11 0:00:00 +01:00
-categories: brighter, cqrs, dotnet, core, linux
+categories: dotnet, core, linux
 ---
 We're going to implement a simple Linux daemon service in .NET Core 2.x. The daemon will respond to input arguments and write to the console.
 
