@@ -52,7 +52,7 @@ Log into AWS and go to Elastic Container Service (ECS), you'll find ECR is liste
 
 The format is:
 
-    \<your account number>.dkr.ecr.\<region>.amazonaws.com/\<name of image>
+    <your account number>.dkr.ecr.<region>.amazonaws.com/<name of image>
 
 These are empty repositories, they are just placeholders that you can put your images into.
 
@@ -93,7 +93,7 @@ When requesting a token from AWS, you need to specify how long (in seconds) you 
 
 To get the token and store it in a Powershell variable use:
 
-    $token = Get-STSSessionToken -DurationInSeconds \<how long in seconds> -SerialNumber \<mfa serial> -TokenCode \<code from the authenticator on your phone>
+    $token = Get-STSSessionToken -DurationInSeconds <how long in seconds> -SerialNumber <mfa serial> -TokenCode <code from the authenticator on your phone>
 
 For example:
 

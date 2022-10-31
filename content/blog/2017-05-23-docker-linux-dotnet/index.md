@@ -63,7 +63,7 @@ In your ASP.NET Core project you'll find a Dockerfile (no file extension). The D
     ARG source
     WORKDIR /app
     EXPOSE 80
-    COPY $\{source:-obj/Docker/publish} .
+    COPY ${source:-obj/Docker/publish} .
     ENTRYPOINT ["dotnet", "AspNetCoreInDocker.dll"]
 
 The first line `microsoft/aspnetcore:1.1` is the base image. The name breaks down as `[maintainer]/[image]:[tag]`. So this is an image that's maintained by Microsoft, has ASP.NET Core on it and has the version tag of 1.1. You can find all the tags on the [Docker Hub page for this image](https://hub.docker.com/r/microsoft/aspnetcore/). You can use `FROM microsoft/aspnetcore:latest` to get yourself running. ([I've started a Stack Overflow question to understand why](https://stackoverflow.com/questions/44134429/why-does-latest-aspnet-core-docker-image-run-when-the-tag-1-1-fails)).

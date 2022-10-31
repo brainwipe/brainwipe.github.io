@@ -13,7 +13,7 @@ categories: localdb datagrip
 ## An error connecting to Local DB
 When [connecting to LocalDB](https://blog.jetbrains.com/datagrip/2016/10/07/connecting-datagrip-to-sql-server-express-localdb/) I often receive the error:
 
-    [2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$\<pipe name>\sql\query (The system cannot find the file specified)
+    [2017-06-19 11:52:50] java.io.FileNotFoundException: \\.\pipe\MSSQL$<pipe name>\sql\query (The system cannot find the file specified)
 
 It also fails in the Test Connection window.
 

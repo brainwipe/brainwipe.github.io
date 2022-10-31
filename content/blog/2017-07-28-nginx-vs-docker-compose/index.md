@@ -42,17 +42,17 @@ I built the solution and got the following:
     System.InvalidOperationException: Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'.
     at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.GetLabelValue(IReadOnlyDictionary`2 labels, String labelName, Boolean required)
     at Microsoft.DotNet.Docker.DockerServiceDebugProfileProvider.ParseDockerServiceDebugProfiles(String workspaceName, DockerComposeDocument document)
-    at Microsoft.DotNet.Docker.DockerWorkspace.\<GetDockerServiceDebugProfilesAsync>d__12.MoveNext()
+    at Microsoft.DotNet.Docker.DockerWorkspace.<GetDockerServiceDebugProfilesAsync>d__12.MoveNext()
     --- End of stack trace from previous location where exception was thrown ---
     at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
     at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
-    at Microsoft.DotNet.Docker.DockerWorkspace.\<PrepareForBuildAsync>d__13.MoveNext()
+    at Microsoft.DotNet.Docker.DockerWorkspace.<PrepareForBuildAsync>d__13.MoveNext()
     --- End of stack trace from previous location where exception was thrown ---
     at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
     at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
     at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute()
     at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute()
-    at Microsoft.Build.BackEnd.TaskBuilder.\<ExecuteInstantiatedTask>d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
+    at Microsoft.Build.BackEnd.TaskBuilder.<ExecuteInstantiatedTask>d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
 
 The most important line is that `Can not find label 'com.microsoft.visualstudio.targetoperatingsystem'`. This means that Visual Studio needs to know what the operating system is. In your docker-compose project, click the little triangle next to `docker-compose.yml` and you'll see that there are a number of additional files that Visual Studio needs. Open `docker-compose.vs.debug.yml`. I needed to put in a new entry in there to tell it what the target operating system was for my new image:
 
@@ -70,24 +70,24 @@ For the second error, the Error window showed that:
     For more troubleshooting information, go to http://aka.ms/DockerToolsTroubleshooting ---> Microsoft.DotNet.Docker.CommandLineClientException
     at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
     at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
-    at Microsoft.DotNet.Docker.DockerClient.\<ExecuteAsync>d__0.MoveNext()
+    at Microsoft.DotNet.Docker.DockerClient.<ExecuteAsync>d__0.MoveNext()
     --- End of inner exception stack trace ---
-    at Microsoft.DotNet.Docker.DockerClient.\<ExecuteAsync>d__0.MoveNext()
+    at Microsoft.DotNet.Docker.DockerClient.<ExecuteAsync>d__0.MoveNext()
     --- End of stack trace from previous location where exception was thrown ---
     at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
     at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
-    at Microsoft.DotNet.Docker.DockerWorkspace.\<PrepareForBuildAsync>d__13.MoveNext()
+    at Microsoft.DotNet.Docker.DockerWorkspace.<PrepareForBuildAsync>d__13.MoveNext()
     --- End of stack trace from previous location where exception was thrown ---
     at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
     at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
     at Microsoft.DotNet.Docker.BuildTasks.DockerBaseTask.Execute()
     at Microsoft.Build.BackEnd.TaskExecutionHost.Microsoft.Build.BackEnd.ITaskExecutionHost.Execute()
-    at Microsoft.Build.BackEnd.TaskBuilder.\<ExecuteInstantiatedTask>d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
+    at Microsoft.Build.BackEnd.TaskBuilder.<ExecuteInstantiatedTask>d__26.MoveNext()	docker-compose	C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\MSBuild\Microsoft\VisualStudio\v15.0\Docker\Microsoft.VisualStudio.Docker.Compose.targets	153	
 
 This is Visual Studio telling us that something happened on the command line and it doesn't know how to deal with it. In this case, go to the Visual Studio Output window, ensure you've got Build selected in the drop down at the top and scroll up to the line about that stack trace, you'll see the actual commands it was trying to run:
 
     [snip]
-    docker  ps --filter "status=running" --filter "name=dockercompose320715364_mcotestclient_" --format \{% raw %}\{\{.ID}}\{% endraw %} -n 1
+    docker  ps --filter "status=running" --filter "name=dockercompose320715364_mcotestclient_" --format {% raw %}{{.ID}}{% endraw %} -n 1
     2>ab666c689e17
     2>docker  exec -i ab666c689e17 /bin/bash -c "if PID=$(pidof -x dotnet); then kill $PID; fi"
     2>rpc error: code = 2 desc = oci runtime error: exec failed: container_linux.go:262: starting container process caused "exec: \"/bin/bash\": stat /bin/bash: no such file or directory"
