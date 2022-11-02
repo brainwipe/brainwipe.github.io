@@ -1,4 +1,207 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Blog RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Mon, 31 Oct 2022 12:40:07 GMT</lastBuildDate><item><title><![CDATA[Setting IAM Policy that forces MFA use on the command line]]></title><description><![CDATA[Securing your AWS IAM account with MFA is a really good idea. However, if you’re not careful, the AWS IAM policy might stop you from using…]]></description><link>https://brainwipe.github.io/2022-04-06-aws-mfa-on-powershell/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-04-06-aws-mfa-on-powershell/</guid><pubDate>Wed, 06 Apr 2022 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Securing your AWS IAM account with MFA is a really good idea. However, if you’re not careful, the AWS IAM policy might stop you from using the AWS Powershell toolkit. This post is an &lt;a href=&quot;https://en.wikipedia.org/wiki/Aide-m%C3%A9moire&quot;&gt;aide mémoire&lt;/a&gt;.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Blog RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Wed, 02 Nov 2022 11:12:08 GMT</lastBuildDate><item><title><![CDATA[Connecting .NET to AWS Kafka (MSK)]]></title><description><![CDATA[This guide looks at connecting a .NET Core client to an AWS Kafka (MSK) cluster using Mutual TLS. We’re going to focus on the mutual TLS…]]></description><link>https://brainwipe.github.io/2022-10-31-aws-msk-dotnet/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-10-31-aws-msk-dotnet/</guid><pubDate>Mon, 31 Oct 2022 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;This guide looks at connecting a .NET Core client to an AWS Kafka (MSK) cluster using Mutual TLS. We’re going to focus on the mutual TLS authentication, how to make certificates, a CA and certificate requests.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;WARNING: You will be charged by AWS.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Much of the instructions below will include a charge by AWS. That’s my only warning.&lt;/p&gt;
+&lt;h2&gt;Pre-requisites&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;openssl&lt;/code&gt; &lt;a href=&quot;https://wiki.openssl.org/index.php/Binaries&quot;&gt;Windows binaries here&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://aws.amazon.com/cli/&quot;&gt;AWS CLI access&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;AWS API and Kafka Connections&lt;/h2&gt;
+&lt;p&gt;The first aspect to wrap your head around is that there are two API. AWS MSK and Confluent Kafka.&lt;/p&gt;
+&lt;p&gt;AWS MSK is for managing the cluster itself and needs IAM permissions. You use the &lt;a href=&quot;https://www.nuget.org/packages/AWSSDK.Kafka/&quot;&gt;AWSSDK.Kafka nuget package&lt;/a&gt; for that. That package will &lt;strong&gt;not&lt;/strong&gt; let you connect to the Kafka brokers themselves. Only for cluster admin.&lt;/p&gt;
+&lt;p&gt;Confluent Kafka is for producing/consuming messages to/from the Kafka queue itself. You use the &lt;a href=&quot;https://www.nuget.org/packages/Confluent.Kafka/&quot;&gt;Confluent.Kafka nuget package&lt;/a&gt; for that.&lt;/p&gt;
+&lt;p&gt;If you’re not going to be administering the AWS MSK cluster through code then you don’t need the AWSSDK!&lt;/p&gt;
+&lt;h2&gt;Not covering generic Kafka use&lt;/h2&gt;
+&lt;p&gt;There are lots of guides on how to use Confluent.Kafka to connect to a Kafka cluster from .NET. I liked &lt;a href=&quot;https://awswith.net/2020/11/01/developing-net-core-applications-for-apache-kafka-and-amazon-msk/&quot;&gt;Developing .NET Core Applications for Apache Kafka and Amazon MSK&lt;/a&gt; although it is very light on the detail on the MSK part.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://docs.confluent.io/kafka-clients/dotnet/current/overview.html&quot;&gt;The official documentation&lt;/a&gt; is also good but leans heavily on Confluent’s own cloud.&lt;/p&gt;
+&lt;h2&gt;Create an AWS Private Certificate Authority&lt;/h2&gt;
+&lt;p&gt;A &lt;a href=&quot;https://www.digicert.com/blog/what-is-a-certificate-authority&quot;&gt;certificate authority&lt;/a&gt; (CA) is usually a company or organisation that validates websites, emails and so on. A &lt;em&gt;private&lt;/em&gt; certificate authority is where &lt;em&gt;you&lt;/em&gt; are the organisation doing the validating (through AWS) for your own services inside AWS.&lt;/p&gt;
+&lt;p&gt;You can use certificates issued by &lt;a href=&quot;https://www.verisign.com/en_US/website-presence/online/ssl-certificates/index.xhtml&quot;&gt;Verisign&lt;/a&gt; or &lt;a href=&quot;https://letsencrypt.org/&quot;&gt;LetsEncrypt&lt;/a&gt; or some other issuer but in this case it’s your AWS service and your client, so you can trust you. If any third party wants to use it, you can send the certificate to them. We’ll come onto that later.&lt;/p&gt;
+&lt;p&gt;The MSK cluster is going to use that certificate authority in two ways:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;It’s going to authenticate clients using it.&lt;/li&gt;
+&lt;li&gt;It’s going to let clients authenticate it.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;(that’s why it’s &lt;a href=&quot;https://www.cloudflare.com/en-gb/learning/access-management/what-is-mutual-tls/&quot;&gt;mutual transport layer security&lt;/a&gt;, both sides have to authenticate that they know who they are)&lt;/p&gt;
+&lt;h3&gt;Steps&lt;/h3&gt;
+&lt;p&gt;To create a private CA, go to &lt;a href=&quot;https://eu-west-2.console.aws.amazon.com/acm-pca/home?region=eu-west-2#/firstrunscreen&quot;&gt;AWS’s Private Certificate Authority&lt;/a&gt; (beware the link is to eu west 2 region).&lt;/p&gt;
+&lt;p&gt;Settings:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Type: Root&lt;/li&gt;
+&lt;li&gt;O,OU,C,CN, etc: set these sensibly for your company&lt;/li&gt;
+&lt;li&gt;Key algorithm: RSA 2048 is fine at time of writing&lt;/li&gt;
+&lt;li&gt;Certificate revocation options: none - they don’t work with Kafka. You use Kafka Access Control Lists (ACLs) to control revocation instead.&lt;/li&gt;
+&lt;li&gt;CA permissions options: Check&lt;/li&gt;
+&lt;li&gt;Pricing: ⚠ Check (it’s going to cost!)&lt;/li&gt;
+&lt;li&gt;Click Create CA.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That’s it. Click through to your certificate and make a note of the new private certificate authority Amazon Resource Name (ARN). Being the root of a certificate chain, the Certificate Authority has a special role but it’s just a certificate like any other. It will look something like this:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;-----BEGIN CERTIFICATE-----
+MIIEKjCCAxKgAwIBAgIQaEuWKnMW5/K/++B9NulGxTANBgkqhkiG9w0BAQsFADCB
+hTELMAkGA1UEBhMCR0IxHTAbBgNVBAoMFE15IENsaW5pY2FsIE91dGNvbWVzMRQw
+HQOr3V2CW1z6Idh6RS4=
+-----END CERTIFICATE-----&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;(Not a real certificate, just me banging the keyboard).&lt;/p&gt;
+&lt;h2&gt;Export, convert the Private CA&lt;/h2&gt;
+&lt;p&gt;The .NET client needs to make sure that the Kafka server it is talking to is the right one. If you’re using a Private CA then you will need to install it in the Windows Certificate store on every computer that needs a connection to Kafka (including giving it to 3rd parties if others are connecting to it).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Log into the AWS Console.&lt;/li&gt;
+&lt;li&gt;Find your Private CA, click Actions-&gt;Get CA Certificate&lt;/li&gt;
+&lt;li&gt;Click “Export certificate body to a file”&lt;/li&gt;
+&lt;li&gt;A file called &lt;code class=&quot;language-text&quot;&gt;Certificate.pem&lt;/code&gt; is downloaded.&lt;/li&gt;
+&lt;li&gt;Rename the file &lt;code class=&quot;language-text&quot;&gt;kafka_private_ca.pem&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The .NET client needs this certificate installed into the “Trusted Root Store” of the Certificate Manager. But &lt;code class=&quot;language-text&quot;&gt;.pem&lt;/code&gt; files are not supported, we need to convert it using &lt;code class=&quot;language-text&quot;&gt;openssl&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Open Powershell to &lt;code class=&quot;language-text&quot;&gt;kafka_private_ca.pem&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Use &lt;code class=&quot;language-text&quot;&gt;openssl&lt;/code&gt; to convert it to pkcs12 format:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;powershell&quot;&gt;&lt;pre class=&quot;language-powershell&quot;&gt;&lt;code class=&quot;language-powershell&quot;&gt;openssl pkcs12 &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;export &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;out kafka_private_ca&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;p12 &lt;span class=&quot;token operator&quot;&gt;-in&lt;/span&gt; kafka_private_ca&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;pem &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;nokeys&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;Add an export password and make a note of it, you will need it to install it&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;NB: We need to use &lt;code class=&quot;language-text&quot;&gt;-nokeys&lt;/code&gt; because there are no private keys in the PEM file, openssl doesn’t know that unless we tell it.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;In windows explorer, double click the &lt;code class=&quot;language-text&quot;&gt;kafka_private_ca.p12&lt;/code&gt; and then go through the Certificate Import Wizard.&lt;/li&gt;
+&lt;li&gt;Store Location: Local Machine&lt;/li&gt;
+&lt;li&gt;File to Import: path should be to kafka_private_ca.p12&lt;/li&gt;
+&lt;li&gt;Password: that you just set on &lt;code class=&quot;language-text&quot;&gt;openssl pkcs12 export&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Automatically detect store&lt;/li&gt;
+&lt;li&gt;Next and Finish.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The AWS Private CA will now be installed on this computer. You will need to repeat the process for any computer you’re using it on. If a 3rd party wants to connect to your client, they will need this certificate too.&lt;/p&gt;
+&lt;h2&gt;Create a Client Certificate&lt;/h2&gt;
+&lt;p&gt;MSK needs to know that the client is authenticated to make calls. For that, the client needs it’s own certificate. Here are the steps:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Create a new certificate called a client certificate with a signing request&lt;/li&gt;
+&lt;li&gt;Use the signing request to ask the Private CA on AWS to sign the client certificate&lt;/li&gt;
+&lt;li&gt;Get the newly signed client certificate from AWS&lt;/li&gt;
+&lt;li&gt;Convert the newly signed client certificate into a format that the .NET Kafka client can use&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Create a new client certificate and signing request&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;In PowerShell&lt;/li&gt;
+&lt;li&gt;Create new certificate with signing request:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;powershell&quot;&gt;&lt;pre class=&quot;language-powershell&quot;&gt;&lt;code class=&quot;language-powershell&quot;&gt;openssl req &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;newkey rsa:2048 &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;nodes &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;keyout kafka_test_client&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;key &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;out kafka_test_client&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;csr&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;That will generate the key first:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;Generating a RSA private key
+........................................................................................................................................................+++++
+.......................+++++
+writing new private key to &apos;kafka_test_client.key&apos;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then ask you to fill in details for the certificate request:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter &apos;.&apos;, the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:UK
+State or Province Name (full name) [Some-State]:London
+Locality Name (eg, city) []:London
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Company
+Organizational Unit Name (eg, section) []:Development
+Common Name (e.g. server FQDN or YOUR name) []:mycompany.com
+Email Address []:me@mycompany.com
+
+Please enter the following &apos;extra&apos; attributes
+to be sent with your certificate request
+A challenge password []: APassword
+An optional company name []: My Company&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;Put in answers for country name (AU), Province, City, Organisation,&lt;/li&gt;
+&lt;li&gt;FQDN is the Fully Qualified Domain name - you don’t need one of these but if you have a corporate web domain, use that: mycompany.com&lt;/li&gt;
+&lt;li&gt;(Optional) It’s recommended that set a password. It can be blank if you are going to protect your certificate in some other way. If you use a password then make sure you store that in a secure place away from your certificates.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;At the end of that, two files are generated:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The certificate signing request: &lt;code class=&quot;language-text&quot;&gt;kafka_test_client.csr&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;The certificate’s private key: &lt;code class=&quot;language-text&quot;&gt;kafka_test_client.key&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Keep the .key file secret!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3&gt;Sign the client certificate&lt;/h3&gt;
+&lt;p&gt;We’re now going to take the certificate signing request and ask our AWS Private CA to sign it for us.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;From AWS, get the ARN of your Private CA certificate, e.g. &lt;code class=&quot;language-text&quot;&gt;arn:aws:acm-pca:eu-west-2:123456789:certificate-authority/11111111-1111-1111-1111-111111111111&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Open PowerShell&lt;/li&gt;
+&lt;li&gt;Sign the certificate:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;powershell&quot;&gt;&lt;pre class=&quot;language-powershell&quot;&gt;&lt;code class=&quot;language-powershell&quot;&gt;aws acm-pca issue-certificate &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;certificate-authority-arn &lt;span class=&quot;token string&quot;&gt;&quot;arn:aws:acm-pca:eu-west-2:123456789:certificate-authority/11111111-1111-1111-1111-111111111111&quot;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;csr fileb:&lt;span class=&quot;token operator&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;/&lt;/span&gt;kafka_test_client&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;csr &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;signing-algorithm &lt;span class=&quot;token string&quot;&gt;&quot;SHA256WITHRSA&quot;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;validity Value=300&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;Type&lt;/span&gt;=&lt;span class=&quot;token string&quot;&gt;&quot;DAYS&quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;The result will be the ARN of the signed certificate in a JSON snippet:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;json&quot;&gt;&lt;pre class=&quot;language-json&quot;&gt;&lt;code class=&quot;language-json&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token property&quot;&gt;&quot;CertificateArn&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;arn:aws:acm-pca:eu-west-2:123456789:certificate-authority/11111111-1111-1111-1111-111111111111/certificate/11111111111111111111111&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Note: that’s just the id of the certificate, we haven’t downloaded it yet!&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;Using the &lt;code class=&quot;language-text&quot;&gt;CertificateArn&lt;/code&gt; in the previous step, download the certificate:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;powershell&quot;&gt;&lt;pre class=&quot;language-powershell&quot;&gt;&lt;code class=&quot;language-powershell&quot;&gt;aws acm-pca &lt;span class=&quot;token function&quot;&gt;get-certificate&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;certificate-authority-arn &lt;span class=&quot;token string&quot;&gt;&quot;arn:aws:acm-pca:eu-west-2:123456789:certificate-authority/11111111-1111-1111-1111-111111111111&quot;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;certificate-arn &lt;span class=&quot;token string&quot;&gt;&quot;arn:aws:acm-pca:eu-west-2:123456789:certificate-authority/11111111-1111-1111-1111-111111111111/certificate/11111111111111111111111&quot;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;--&lt;/span&gt;output text&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;The result looks like (not real certificates, real ones are longer):&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;-----BEGIN CERTIFICATE-----
+MIIEKjCCAxKgAwIBAgIQaEuWKnMW5/K/++B9NulGxTANBgkqhkiG9w0BAQsFADCB
+hTELMAkGA1UEBhMCR0IxHTAbBgNVBAoMFE15IENsaW5pY2FsIE91dGNvbWVzMRQw
+HQOr3V2CW1z6Idh6RS4=
+-----END CERTIFICATE-----       -----BEGIN CERTIFICATE-----
+MIID2DCCAsCgAwIBAgIQQJDUBmoYft8TvHvqvHN65DANBgkqhkiG9w0BAQsFADCB
+hTELMAkGA1UEBhMCR0IxHTAbBgNVBAoMFE15IENsaW5pY2FsIE91dGNvbWVzMRQw
+EgYDVQQLDAtEZXZlbG9wbWVudDEPMA0GA1UECAwGTG9uZG9uMR8wHQYDVQQDDBZt&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;Copy the whole result into a new file &lt;code class=&quot;language-text&quot;&gt;kafka_test_client.cer&lt;/code&gt;, this is the client certificate.&lt;/li&gt;
+&lt;li&gt;Replace all the characters between &lt;code class=&quot;language-text&quot;&gt;-----END CERTIFICATE-----&lt;/code&gt; and &lt;code class=&quot;language-text&quot;&gt;-----BEGIN CERTIFICATE-----&lt;/code&gt; with a return carriage so that it looks like this:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;-----BEGIN CERTIFICATE-----
+MIIEKjCCAxKgAwIBAgIQaEuWKnMW5/K/++B9NulGxTANBgkqhkiG9w0BAQsFADCB
+hTELMAkGA1UEBhMCR0IxHTAbBgNVBAoMFE15IENsaW5pY2FsIE91dGNvbWVzMRQw
+HQOr3V2CW1z6Idh6RS4=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIID2DCCAsCgAwIBAgIQQJDUBmoYft8TvHvqvHN65DANBgkqhkiG9w0BAQsFADCB
+hTELMAkGA1UEBhMCR0IxHTAbBgNVBAoMFE15IENsaW5pY2FsIE91dGNvbWVzMRQw
+EgYDVQQLDAtEZXZlbG9wbWVudDEPMA0GA1UECAwGTG9uZG9uMR8wHQYDVQQDDBZt&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code class=&quot;language-text&quot;&gt;kafka_test_client.cer&lt;/code&gt; and &lt;code class=&quot;language-text&quot;&gt;kafka_test_client.key&lt;/code&gt; files are used by the .NET client to authenticate. You don’t need the CSR again, if you’re going through a new signing, it’s best to start with a new key altogether.&lt;/p&gt;
+&lt;h2&gt;Now Build Your MSK Cluster&lt;/h2&gt;
+&lt;p&gt;Out of the scope of this blog, but once you have the Private CA, you can &lt;a href=&quot;https://docs.aws.amazon.com/msk/latest/developerguide/msk-create-cluster.html&quot;&gt;create the MSK Cluster&lt;/a&gt; using Mutual TLS. The client configuration will need the list of brokers, which is called the “bootstrap servers”.&lt;/p&gt;
+&lt;h2&gt;.NET Client Config&lt;/h2&gt;
+&lt;p&gt;Create a new .NET core command line application to test your code and install the Confluent.Kafka nuget package.&lt;/p&gt;
+&lt;p&gt;We’re going to get a list of topics from the Kafka cluster.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;// Get this from AWS MSK Console, select your cluster, click &quot;View Client Information&quot;, public endpoint&lt;/span&gt;
+&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; bootstrap &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;b-1-public.nameofcluster.xxxxx.c2.kafka.eu-west-2.amazonaws.com:9194,b-2-public.nameofcluster.xxxxx.c2.kafka.eu-west-2.amazonaws.com:9194&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;// We&apos;re using Admin Client here but this will work for produce and consumer&lt;/span&gt;
+&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; adminClientConfig &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;AdminClientConfig&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    BootstrapServers &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; bootstrap&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    SecurityProtocol &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; SecurityProtocol&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Ssl&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    SslCertificateLocation &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;kafka_test_client.cer&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    SslKeyLocation &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;kafka_test_client.key&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token keyword&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; adminClient &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;AdminClientBuilder&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;adminClientConfig&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;Build&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;// Get the cluster&apos;s metadata and print out the topics to the console.&lt;/span&gt;
+&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; metadata &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; adminClient&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;GetMetadata&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;foreach&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; topic &lt;span class=&quot;token keyword&quot;&gt;in&lt;/span&gt; metadata&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Topics&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    Console&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token interpolation-string&quot;&gt;&lt;span class=&quot;token string&quot;&gt;$&quot;Topic - &lt;/span&gt;&lt;span class=&quot;token interpolation&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;token expression language-csharp&quot;&gt;topic&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Topic&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If you are struggling to get connected, add a &lt;code class=&quot;language-text&quot;&gt;Debug&lt;/code&gt;configuration item for more detail.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; adminClientConfig &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;AdminClientConfig&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    Debug &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;broker,protocol,metadata,topic&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h3&gt;Note on CA Location&lt;/h3&gt;
+&lt;p&gt;If you are running on Windows, you cannot use the client config &lt;code class=&quot;language-text&quot;&gt;SslCaLocation&lt;/code&gt; to reference a physical CA certificate. The .NET client only appears to obey the Windows Certificate Store. &lt;a href=&quot;https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.ClientConfig.html#Confluent_Kafka_ClientConfig_SslCaLocation&quot;&gt;View the docs for more info&lt;/a&gt;.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Setting IAM Policy that forces MFA use on the command line]]></title><description><![CDATA[Securing your AWS IAM account with MFA is a really good idea. However, if you’re not careful, the AWS IAM policy might stop you from using…]]></description><link>https://brainwipe.github.io/2022-04-06-aws-mfa-on-powershell/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-04-06-aws-mfa-on-powershell/</guid><pubDate>Wed, 06 Apr 2022 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Securing your AWS IAM account with MFA is a really good idea. However, if you’re not careful, the AWS IAM policy might stop you from using the AWS Powershell toolkit. This post is an &lt;a href=&quot;https://en.wikipedia.org/wiki/Aide-m%C3%A9moire&quot;&gt;aide mémoire&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;In IAM, you set policies that control access to resources. To force MFA, you might add a policy that looks like this:&lt;/p&gt;
 &lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;# Don&apos;t blindly copy this, there&apos;s a problem here
 {
