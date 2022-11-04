@@ -10,6 +10,8 @@ This guide looks at connecting a .NET Core client to an AWS Kafka (MSK) cluster 
 
 Much of the instructions below will include a charge by AWS. That's my only warning.
 
+[Companion troubleshooting blog here](../2022-10-31-aws-msk-dotnet).
+
 ## Pre-requisites
 
 - `openssl` [Windows binaries here](https://wiki.openssl.org/index.php/Binaries)
