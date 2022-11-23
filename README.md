@@ -4,7 +4,7 @@ Built on Gatsby. Here's the basics.
 ## Develop
 
 ```powershell
-npm develop
+npm run develop
 ```
 
 Will run it on [localhost:8000](http://localhost:8000).
