@@ -74,6 +74,8 @@ HQOr3V2CW1z6Idh6RS4=
 
 ## Export, convert the Private CA
 
+> **Optional step!** The Private CA certificate is included in the signed certificate from AWS, the client should use it. If you find that the SSL handshake fails, then convert and install the Private CA as below.
+
 The .NET client needs to make sure that the Kafka server it is talking to is the right one. If you're using a Private CA then you will need to install it in the Windows Certificate store on every computer that needs a connection to Kafka (including giving it to 3rd parties if others are connecting to it).
 
  - Log into the AWS Console.
