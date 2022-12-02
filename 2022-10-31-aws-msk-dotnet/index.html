@@ -87,10 +87,13 @@ HQOr3V2CW1z6Idh6RS4=
 <li>Get the newly signed client certificate from AWS</li>
 <li>Convert the newly signed client certificate into a format that the .NET Kafka client can use</li>
 </ul>
-<h3>Create a new client certificate and signing request</h3>
+<h3>Create a new client key and signing request</h3>
+<blockquote>
+<p>If you already have a client key, then jump to the next section</p>
+</blockquote>
 <ul>
 <li>In PowerShell</li>
-<li>Create new certificate with signing request:</li>
+<li>Create new key with signing request:</li>
 </ul>
 <div class="gatsby-highlight" data-language="powershell"><pre class="language-powershell"><code class="language-powershell">openssl req <span class="token operator">-</span>newkey rsa:2048 <span class="token operator">-</span>nodes <span class="token operator">-</span>keyout kafka_test_client<span class="token punctuation">.</span>key <span class="token operator">-</span>out kafka_test_client<span class="token punctuation">.</span>csr</code></pre></div>
 <p>That will generate the key first:</p>
@@ -132,6 +135,43 @@ An optional company name []: My Company</code></pre></div>
 <blockquote>
 <p>Keep the .key file secret!</p>
 </blockquote>
+<h3>Create just a signing request</h3>
+<p>For when you already have a key file. If you don’t already have one, use the section above!</p>
+<ul>
+<li>In PowerShell</li>
+<li>Create new key with signing request:</li>
+</ul>
+<div class="gatsby-highlight" data-language="powershell"><pre class="language-powershell"><code class="language-powershell">openssl req <span class="token operator">-</span>new <span class="token operator">-</span>key kafka_test_client<span class="token punctuation">.</span>key <span class="token operator">-</span>out kafka_test_client<span class="token punctuation">.</span>csr</code></pre></div>
+<p>Like above, you will need to fill in the certificate signing request information:</p>
+<div class="gatsby-highlight" data-language="text"><pre class="language-text"><code class="language-text">-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:UK
+State or Province Name (full name) [Some-State]:London
+Locality Name (eg, city) []:London
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Company
+Organizational Unit Name (eg, section) []:Development
+Common Name (e.g. server FQDN or YOUR name) []:mycompany.com
+Email Address []:me@mycompany.com
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []: APassword
+An optional company name []: My Company</code></pre></div>
+<ul>
+<li>Put in answers for country name (AU), Province, City, Organisation,</li>
+<li>FQDN is the Fully Qualified Domain name - you don’t need one of these but if you have a corporate web domain, use that: mycompany.com</li>
+<li>(Optional) It’s recommended that set a password. It can be blank if you are going to protect your certificate in some other way. If you use a password then make sure you store that in a secure place away from your certificates.</li>
+</ul>
+<p>At the end of that, one file is generated:</p>
+<ul>
+<li>The certificate signing request: <code class="language-text">kafka_test_client.csr</code></li>
+</ul>
 <h3>Sign the client certificate</h3>
 <p>We’re now going to take the certificate signing request and ask our AWS Private CA to sign it for us.</p>
 <ul>
