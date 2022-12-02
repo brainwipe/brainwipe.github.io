@@ -115,10 +115,12 @@ MSK needs to know that the client is authenticated to make calls. For that, the 
 - Get the newly signed client certificate from AWS
 - Convert the newly signed client certificate into a format that the .NET Kafka client can use
 
-### Create a new client certificate and signing request
+### Create a new client key and signing request
+
+> If you already have a client key, then jump to the next section
 
 - In PowerShell
-- Create new certificate with signing request:
+- Create new key with signing request:
 
 ```powershell
 openssl req -newkey rsa:2048 -nodes -keyout kafka_test_client.key -out kafka_test_client.csr
@@ -157,6 +159,7 @@ to be sent with your certificate request
 A challenge password []: APassword
 An optional company name []: My Company
 ```
+
  - Put in answers for country name (AU), Province, City, Organisation,
  - FQDN is the Fully Qualified Domain name - you don't need one of these but if you have a corporate web domain, use that: mycompany.com
  - (Optional) It's recommended that set a password. It can be blank if you are going to protect your certificate in some other way. If you use a password then make sure you store that in a secure place away from your certificates.
@@ -167,6 +170,50 @@ At the end of that, two files are generated:
  - The certificate's private key: `kafka_test_client.key`
 
 > Keep the .key file secret!
+
+### Create just a signing request
+
+For when you already have a key file. If you don't already have one, use the section above!
+
+- In PowerShell
+- Create new key with signing request:
+
+```powershell
+openssl req -new -key kafka_test_client.key -out kafka_test_client.csr
+```
+
+Like above, you will need to fill in the certificate signing request information:
+
+```
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:UK
+State or Province Name (full name) [Some-State]:London
+Locality Name (eg, city) []:London
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Company
+Organizational Unit Name (eg, section) []:Development
+Common Name (e.g. server FQDN or YOUR name) []:mycompany.com
+Email Address []:me@mycompany.com
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []: APassword
+An optional company name []: My Company
+```
+
+ - Put in answers for country name (AU), Province, City, Organisation,
+ - FQDN is the Fully Qualified Domain name - you don't need one of these but if you have a corporate web domain, use that: mycompany.com
+ - (Optional) It's recommended that set a password. It can be blank if you are going to protect your certificate in some other way. If you use a password then make sure you store that in a secure place away from your certificates.
+
+At the end of that, one file is generated:
+
+ - The certificate signing request: `kafka_test_client.csr` 
 
 ### Sign the client certificate
 
