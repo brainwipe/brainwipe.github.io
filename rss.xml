@@ -1,4 +1,199 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Neuron RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Sun, 01 Jan 2023 20:44:25 GMT</lastBuildDate><item><title><![CDATA[Find out what SQL queries are slow on PostgreSQL locally]]></title><description><![CDATA[Your cloud provider is showing you that some of your PostgreSQL queries are slow. Your cloud provider is showing you SQL, and you might have…]]></description><link>https://brainwipe.github.io/2022-11-23-postgresql-turn-on-stats/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-11-23-postgresql-turn-on-stats/</guid><pubDate>Wed, 23 Nov 2022 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Your cloud provider is showing you that some of your PostgreSQL queries are slow. Your cloud provider is showing you SQL, and you might have set &lt;a href=&quot;https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.UsingDashboard.SQLTextSize.html&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;track_activity_query_size&lt;/code&gt;&lt;/a&gt; to something larger than 4096 bytes, so you can see your larger SQL statements.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Neuron RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Wed, 13 Nov 2024 14:15:22 GMT</lastBuildDate><item><title><![CDATA[From GitHub to AWS ECS Serverless - Part 1 - Build]]></title><description><![CDATA[These are technical notes for going from code committed into a repository to Blue/Green deployments on AWS as of 12th November 202…]]></description><link>https://brainwipe.github.io/2022-11-24-build-aspnet-codebuild/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-11-24-build-aspnet-codebuild/</guid><pubDate>Tue, 12 Nov 2024 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;These are technical notes for going from code committed into a repository to Blue/Green deployments on AWS as of 12th November 2024. Technology does change and some of the limitations I’m going to list will be fixed by AWS in the future.&lt;/p&gt;
+&lt;p&gt;I’m a practitioner, not an expert. If you know a better way, then go for it. Some of the instructions here are oddly specific to my use case. However, if I were to document all use cases, you would end up with the AWS documentation rather than a single thought out description.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;You might incur a cost following these instructions&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;Pre-Requisites&lt;/h2&gt;
+&lt;p&gt;You have the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ASP.NET application that runs up in a single container&lt;/li&gt;
+&lt;li&gt;A container that performs you ASP.NET image building&lt;/li&gt;
+&lt;li&gt;The application is stored in a private GitHub repository&lt;/li&gt;
+&lt;li&gt;You have GitHub administrator access over the repository&lt;/li&gt;
+&lt;li&gt;You have AWS permissions to use the CodePipeline and CodeBuild (but likely you’ll need more)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;AWS Developer Tools in Brief&lt;/h2&gt;
+&lt;p&gt;AWS has a suite of tools they call &lt;a href=&quot;https://aws.amazon.com/products/developer-tools/&quot;&gt;AWS Developer Tools&lt;/a&gt;, which allow you to host, build, test and deploy your code with all of the usual AWS trappings of AWS CloudWatch for logging, S3 for storage, IAM for access control, SNS for sending out messages and so on. Each of the tools (CodeCommit, CodeArtifact, CodeBuild, CodeDeploy, CodePipeline) work independently so you can swap out parts by integrating with 3rd parties. If you are building your containers using &lt;a href=&quot;https://github.com/features/actions&quot;&gt;GitHub Actions&lt;/a&gt; then pushing them into the AWS Elastic Container Registry (ECR) then that should work. I’m not doing that here for simplicity.&lt;/p&gt;
+&lt;p&gt;We use GitHub, so we don’t need CodeCommit or CodeArtifact. We do want CodeBuild, CodeDeploy and CodePipeline. They aren’t as tightly integrated as you might expect for example:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If you create a CodeBuild project in CodeBuild directly, then it won’t necessarily run CodePipeline. You must create the CodeBuild Project through CodePipeline.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;And vice versa - a CodeBuild project that is built in the pipeline is unlikely to build on its own because there are parameters (such as the source) that CodeBuild needs but will exist only in the pipeline.&lt;/p&gt;
+&lt;h2&gt;Building ASP.NET containers&lt;/h2&gt;
+&lt;p&gt;You have followed the official &lt;a href=&quot;https://learn.microsoft.com/en-us/dotnet/core/docker/build-container?tabs=windows&quot;&gt;Containerize .NET App&lt;/a&gt; instructions and have a docker file that builds a docker image. AWS CodeBuild is going to use this file to build the container “runtime image” and put that container into the AWS Elastic Container Registry.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;docker&quot;&gt;&lt;pre class=&quot;language-docker&quot;&gt;&lt;code class=&quot;language-docker&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;# This is from the [Containerize .NET App tutorial])(https://learn.microsoft.com/en-us/dotnet/core/docker/build-container?tabs=windows).&lt;/span&gt;
+
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;FROM&lt;/span&gt; mcr.microsoft.com/dotnet/sdk:8.0 &lt;span class=&quot;token keyword&quot;&gt;AS&lt;/span&gt; build-env&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;WORKDIR&lt;/span&gt; /App&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;# Copy everything&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;COPY&lt;/span&gt; . ./&lt;/span&gt;
+&lt;span class=&quot;token comment&quot;&gt;# Restore as distinct layers&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;RUN&lt;/span&gt; dotnet restore&lt;/span&gt;
+&lt;span class=&quot;token comment&quot;&gt;# Build and publish a release&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;RUN&lt;/span&gt; dotnet publish -c Release -o out&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;# Build runtime image&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;FROM&lt;/span&gt; mcr.microsoft.com/dotnet/aspnet:8.0&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;WORKDIR&lt;/span&gt; /App&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;token options&quot;&gt;&lt;span class=&quot;token property&quot;&gt;--from&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;build-env&lt;/span&gt;&lt;/span&gt; /App/out .&lt;/span&gt;
+&lt;span class=&quot;token instruction&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;ENTRYPOINT&lt;/span&gt; [&lt;span class=&quot;token string&quot;&gt;&quot;dotnet&quot;&lt;/span&gt;, &lt;span class=&quot;token string&quot;&gt;&quot;DotNet.Docker.dll&quot;&lt;/span&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h3&gt;Use AWS Image Repository rather than Docker&lt;/h3&gt;
+&lt;p&gt;If you are also using node to build some embedded ReactJS front end (like we do), you might have a line like this:&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;language-text&quot;&gt;FROM node:21-alpine3.19 AS build-node&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;This will pull a docker image from the docker hub by default (the Microsoft ones come from mcr.microsoft.com). You are likely to get an error message &lt;code class=&quot;language-text&quot;&gt;CannotPullContainerError: You have reached your pull rate limit&lt;/code&gt; &lt;a href=&quot;https://repost.aws/knowledge-center/ecs-pull-container-error-rate-limit&quot;&gt;details here&lt;/a&gt;. To get around the rate limit, find the same container on the &lt;a href=&quot;https://gallery.ecr.aws/&quot;&gt;AWS Public ECR gallery&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;So it became:&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;language-text&quot;&gt;FROM public.ecr.aws/docker/library/node:21-alpine AS build-node&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;Connect AWS to GitHub&lt;/h2&gt;
+&lt;p&gt;You need to authenticate AWS to GitHub once for all your pipelines. It’s called a Connection and can be found in Developer Tools -&gt; Settings -&gt; &lt;a href=&quot;https://eu-west-2.console.aws.amazon.com/codesuite/settings/connection&quot;&gt;Connections&lt;/a&gt;. To create a GitHub connection, you will need to be signed in with the account that has owner/administrator access of the GitHub organisation.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;You use the administrator role to setup the connection, after that AWS is installed as a GitHub App in the GitHub organisation.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;So don’t worry about the administrator account changing in the future.&lt;/p&gt;
+&lt;h3&gt;Steps&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Go to the &lt;a href=&quot;https://console.aws.amazon.com/codesuite/settings/connection&quot;&gt;Connections Screen&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Click Create Connection&lt;/li&gt;
+&lt;li&gt;Choose GitHub&lt;/li&gt;
+&lt;li&gt;Give you connection name, I recommend giving it the name of your application rather than just calling it GitHub&lt;/li&gt;
+&lt;li&gt;Click Connect to GitHub&lt;/li&gt;
+&lt;li&gt;Click Install a New App&lt;/li&gt;
+&lt;li&gt;Click through the GitHub steps for installing an app onto an account (either your personal or the organisation)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;At the end, you should have your new &lt;a href=&quot;https://console.aws.amazon.com/codesuite/settings/connection&quot;&gt;GitHub Connection&lt;/a&gt; listed on the connections screen.&lt;/p&gt;
+&lt;h2&gt;Pipelines&lt;/h2&gt;
+&lt;p&gt;A pipeline is a list of steps where the result of each step feeds into the next. You can have lots of pipelines and they can run simulataneously. Before you start clicking, you need to know what you want to achieve from your pipelines. Some examples include:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Build and deploy automatically&lt;/li&gt;
+&lt;li&gt;Build but only deploy when signed off&lt;/li&gt;
+&lt;li&gt;Build only&lt;/li&gt;
+&lt;li&gt;Deploy only&lt;/li&gt;
+&lt;li&gt;Deploy to specific environment (e.g. dev, test, staging, demo or production)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For this example, we want a build pipeline and a separate deploy pipeline.&lt;/p&gt;
+&lt;h2&gt;CodePipeline for CodeBuild&lt;/h2&gt;
+&lt;p&gt;We’re going to create the CodeBuild project via the CodePipeline so that the source is set correctly.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Go to the &lt;a href=&quot;https://console.aws.amazon.com/codesuite/codepipeline/pipelines&quot;&gt;Pipelines screen&lt;/a&gt; and click Create Pipeline&lt;/li&gt;
+&lt;li&gt;Select Build Custom Pipeline, Next&lt;/li&gt;
+&lt;li&gt;For a pipeline name, describe what actions the pipeline is going to do and the product you are working on such as &lt;code class=&quot;language-text&quot;&gt;deploy-myapp&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Leave the rest of the defaults, click Next&lt;/li&gt;
+&lt;li&gt;For Source Provider, choose GitHub App&lt;/li&gt;
+&lt;li&gt;Select the connection (there’s probably only one if you’re new to this)&lt;/li&gt;
+&lt;li&gt;Choose the Repository where you ASP.NET app is&lt;/li&gt;
+&lt;li&gt;Choose Full clone, which gives us more features later&lt;/li&gt;
+&lt;li&gt;Choose your trigger settings (see note below)
+&lt;ul&gt;
+&lt;li&gt;Specify filter&lt;/li&gt;
+&lt;li&gt;Push&lt;/li&gt;
+&lt;li&gt;Tags&lt;/li&gt;
+&lt;li&gt;Include &lt;code class=&quot;language-text&quot;&gt;release*&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Next&lt;/li&gt;
+&lt;li&gt;Select &lt;code class=&quot;language-text&quot;&gt;Other Build Providers&lt;/code&gt; and choose &lt;code class=&quot;language-text&quot;&gt;AWS CodeBuild&lt;/code&gt; from the dropdown&lt;/li&gt;
+&lt;li&gt;Hit Create Project, and this will take you over to CodeBuild in a popup&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;A note on Service Roles&lt;/h3&gt;
+&lt;p&gt;If you have a lot of pipelines, it is worth sharing service roles as they will largely be identical. Where the service roles will differ is in S3 access to where the artifacts are stored. I found that creating multiple service roles and then merging them together in the AWS IAM console on a per-product basis was easier. There’s no harm in having lots of service roles (one per pipeline).&lt;/p&gt;
+&lt;h3&gt;Choosing a Trigger&lt;/h3&gt;
+&lt;p&gt;Specifying a trigger will depend on how you use git to build your software. My preference is a &lt;a href=&quot;https://docs.github.com/en/get-started/using-github/github-flow&quot;&gt;GitHub Flow&lt;/a&gt;. When we want a build to go to test (QA) and beyond, we give it a tag, usually including the date and an ordinal number such as &lt;code class=&quot;language-text&quot;&gt;release-2024.11.11.0&lt;/code&gt;. Therefore, for the trigger defined above, we want to create a container build whenever it detects a tag with &lt;code class=&quot;language-text&quot;&gt;release&lt;/code&gt; in it. It uses &lt;code class=&quot;language-text&quot;&gt;*&lt;/code&gt; as a wildcard for matching.&lt;/p&gt;
+&lt;h3&gt;Add more containers later&lt;/h3&gt;
+&lt;p&gt;If you GitHub repository contains more than one container then you can add more containers later once you get to the end of the Pipeline wizard.&lt;/p&gt;
+&lt;h2&gt;CodeBuild Project&lt;/h2&gt;
+&lt;p&gt;We’re now going to create the CodeBuild project, which will use your &lt;code class=&quot;language-text&quot;&gt;dockerfile&lt;/code&gt; to build a single container and put it into the AWS Elastic Container Registry (ECR).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;For the &lt;code class=&quot;language-text&quot;&gt;project name&lt;/code&gt;, use &lt;code class=&quot;language-text&quot;&gt;build-myapp&lt;/code&gt; because it will be easier to differentiate it&lt;/li&gt;
+&lt;li&gt;Select Managed Image (see below)&lt;/li&gt;
+&lt;li&gt;Create a new Service Role&lt;/li&gt;
+&lt;li&gt;Use a buildspec file - the individual build commands&lt;/li&gt;
+&lt;li&gt;Put in the path to your buildspec file, if the repo has multiple containers in it then you will need one buildspec for each container&lt;/li&gt;
+&lt;li&gt;Click continue to CodePipeline to go back&lt;/li&gt;
+&lt;li&gt;Click Add Environment variables to add any environment variables (see below)&lt;/li&gt;
+&lt;li&gt;Click Next, Skip deploy stage (we’re not doing deploy yet)&lt;/li&gt;
+&lt;li&gt;Click Review and then Create will both create the pipeline and run it&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Managed Docker Image&lt;/h3&gt;
+&lt;p&gt;This bit is a little confusing, so stick with me. This &lt;a href=&quot;https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html&quot;&gt;AWS Managed Image&lt;/a&gt; is the docker container that will host and run your dockerfile. That means Amazon starts with an Amazon Linux Docker Container that will run up your docker file that will in turn build a “build-env” which then builds your “runtime” container. That runtime container is then put into ECR but we’ll come onto that next.&lt;/p&gt;
+&lt;h3&gt;Buildspec File&lt;/h3&gt;
+&lt;p&gt;The &lt;code class=&quot;language-text&quot;&gt;buildspec&lt;/code&gt; file does the heavy lifting of the build process. It’s split into three sections, we’ll look at each below. Don’t forget that these commands are running inside a docker container shell and because we’ve chosen the default Amazon Linux shell, it has pre-loaded utilities on it. If you want to use a custom one, chances are you’ll need to install those things using linux-like commands.&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;language-text&quot;&gt;buildspec&lt;/code&gt; file might look like a dockerfile, but it’s not! It can do a lot more than listed here, we’re just trying to get our container to build and push to the ECR. &lt;a href=&quot;https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html&quot;&gt;Checkout the Buildspec reference for more&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;yml&quot;&gt;&lt;pre class=&quot;language-yml&quot;&gt;&lt;code class=&quot;language-yml&quot;&gt;&lt;span class=&quot;token key atrule&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0.2&lt;/span&gt;
+
+&lt;span class=&quot;token key atrule&quot;&gt;phases&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;token key atrule&quot;&gt;pre_build&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;token key atrule&quot;&gt;on-failure&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; ABORT
+    &lt;span class=&quot;token key atrule&quot;&gt;commands&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo Logging in to Amazon ECR&lt;span class=&quot;token punctuation&quot;&gt;...&lt;/span&gt;
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; aws ecr get&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;login&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;password &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;region $AWS_DEFAULT_REGION &lt;span class=&quot;token punctuation&quot;&gt;|&lt;/span&gt; docker login &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;username AWS &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;password&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  &lt;span class=&quot;token key atrule&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;token key atrule&quot;&gt;on-failure&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; ABORT
+    &lt;span class=&quot;token key atrule&quot;&gt;commands&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo Build started on `date`
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo Building the Docker image for $TagName&lt;span class=&quot;token punctuation&quot;&gt;...&lt;/span&gt;          
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; docker build &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;t $IMAGE_REPO_NAME&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;$TagName &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt;f myapp.dockerfile .
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; docker tag $IMAGE_REPO_NAME&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;$TagName $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;$TagName      
+  &lt;span class=&quot;token key atrule&quot;&gt;post_build&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;token key atrule&quot;&gt;on-failure&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; ABORT
+    &lt;span class=&quot;token key atrule&quot;&gt;commands&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo Build completed on `date`
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo Pushing the Docker image&lt;span class=&quot;token punctuation&quot;&gt;...&lt;/span&gt;
+      &lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt;$TagName&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h4&gt;Passing variables into the buildspec&lt;/h4&gt;
+&lt;p&gt;Variables are passed in from outside using the &lt;code class=&quot;language-text&quot;&gt;$&lt;/code&gt;. There are a number of built in &lt;a href=&quot;https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html&quot;&gt;environment variables&lt;/a&gt; CodeBuild will put in there.
+If you want to know what all the variables there are, copy and paste the list below into the &lt;code class=&quot;language-text&quot;&gt;pre_build: commands:&lt;/code&gt; and it will print them all out when you run the build for the first time.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;yml&quot;&gt;&lt;pre class=&quot;language-yml&quot;&gt;&lt;code class=&quot;language-yml&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BATCH_BUILD_IDENTIFIER $CODEBUILD_BATCH_BUILD_IDENTIFIER
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BUILD_ARN $CODEBUILD_BUILD_ARN
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BUILD_ID $CODEBUILD_BUILD_ID
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BUILD_IMAGE $CODEBUILD_BUILD_IMAGE
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BUILD_NUMBER $CODEBUILD_BUILD_NUMBER
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_BUILD_SUCCEEDING $CODEBUILD_BUILD_SUCCEEDING
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_INITIATOR $CODEBUILD_INITIATOR
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_KMS_KEY_ID $CODEBUILD_KMS_KEY_ID
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_LOG_PATH $CODEBUILD_LOG_PATH
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_PUBLIC_BUILD_URL $CODEBUILD_PUBLIC_BUILD_URL
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_RESOLVED_SOURCE_VERSION $CODEBUILD_RESOLVED_SOURCE_VERSION
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_SOURCE_REPO_URL $CODEBUILD_SOURCE_REPO_URL
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_SOURCE_VERSION $CODEBUILD_SOURCE_VERSION
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_SRC_DIR $CODEBUILD_SRC_DIR
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_START_TIME $CODEBUILD_START_TIME
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_ACTOR_ACCOUNT_ID $CODEBUILD_WEBHOOK_ACTOR_ACCOUNT_ID
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_BASE_REF $CODEBUILD_WEBHOOK_BASE_REF
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_EVENT $CODEBUILD_WEBHOOK_EVENT
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_MERGE_COMMIT $CODEBUILD_WEBHOOK_MERGE_COMMIT
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_PREV_COMMIT $CODEBUILD_WEBHOOK_PREV_COMMIT
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_HEAD_REF $CODEBUILD_WEBHOOK_HEAD_REF
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_TRIGGER $CODEBUILD_WEBHOOK_TRIGGER
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_RUNNER_OWNER $CODEBUILD_RUNNER_OWNER
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_RUNNER_REPO $CODEBUILD_RUNNER_REPO
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_RUNNER_REPO_DOMAIN $CODEBUILD_RUNNER_REPO_DOMAIN
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_LABEL $CODEBUILD_WEBHOOK_LABEL
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_RUN_ID $CODEBUILD_WEBHOOK_RUN_ID
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_JOB_ID $CODEBUILD_WEBHOOK_JOB_ID
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_WEBHOOK_WORKFLOW_NAME $CODEBUILD_WEBHOOK_WORKFLOW_NAME
+&lt;span class=&quot;token punctuation&quot;&gt;-&lt;/span&gt; echo CODEBUILD_RUNNER_WITH_BUILDSPEC $CODEBUILD_RUNNER_WITH_BUILDSPEC&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;You can pass your own variables into your buildspec, you’ll notice that . If you make your own, they cannot begin with &lt;code class=&quot;language-text&quot;&gt;CODEBUILD_&lt;/code&gt; or &lt;code class=&quot;language-text&quot;&gt;AWS_&lt;/code&gt; as they are reserved. The environment variables are not specified in the CodeBuild popup when using CodePipeline (they would be if you were only using CodeBuild), they are specified in the parent window. Do those later!&lt;/p&gt;
+&lt;h4&gt;Pre-Build log-in to AWS ECR&lt;/h4&gt;
+&lt;p&gt;The default CodeBuild container will have AWS toolkit installed on it but it does not automatically have acccess to the ECR, so you need to login. The container runs under the service role you created in the previous step and that will need to have access to the ECR (it did by default when I set it up). It uses that service role to log into the ECR. Strange, I know, but it’s how this works.&lt;/p&gt;
+&lt;h4&gt;Adding Source Variable Environment Variables&lt;/h4&gt;
+&lt;p&gt;We have seen how the &lt;code class=&quot;language-text&quot;&gt;buildspec&lt;/code&gt; file needs &lt;code class=&quot;language-text&quot;&gt;$TagName&lt;/code&gt; environment variable. This is the git tag that triggered this whole process in the first place. To set the tagname correctly, you must create an environment variable in the CodePipeline build window, using &lt;code class=&quot;language-text&quot;&gt;TagName&lt;/code&gt; for the name (ignore the $) and then for the value use:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;#{SourceVariables.TagName}&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code class=&quot;language-text&quot;&gt;#{}&lt;/code&gt; tells AWS that it needs to do a replacement. &lt;code class=&quot;language-text&quot;&gt;SourceVariables&lt;/code&gt; is the name of the “Variable Namespace” given to the variables from the Source. &lt;a href=&quot;https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-variables.html&quot;&gt;Source Variables reference here&lt;/a&gt;. You can’t see them while you’re building the pipeline but once the source part of the pipeline has run, they will appear. The reference doesn’t include all the variables I am getting from the GitHub App source. Here’s a list of what I see:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;- AuthorDate          2024-11-11T14:48:38Z
+- AuthorDisplayName   Rob Lang
+- AuthorEmail         brainwiped@gmail.com
+- AuthorId            Rob Lang
+- BranchName          feature/blog
+- CommitId            91d21ea05d4bef9c7c80d90f96cb0cacf9c9c90d
+- CommitMessage       Blogging for the CodePipeline build
+- ConnectionArn       arn:aws:codeconnections:eu-north-1:123123123123:connection/7b65fd00-061e-43c7-8d42-e55dd18843a3
+- FullRepositoryName  brainwipe/blog
+- ProviderType        GitHub
+- TagName             release-20241111&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;So I could include any of these Source Variables in my buildspec by adding an environment variable such as &lt;code class=&quot;language-text&quot;&gt;#{SourceVariables.TagName}&lt;/code&gt; or &lt;code class=&quot;language-text&quot;&gt;#{SourceVariables.CommitId}&lt;/code&gt;. This could be useful if you want to tag your ECR image with both the tag and the commit id.&lt;/p&gt;
+&lt;h2&gt;Final Thoughts&lt;/h2&gt;
+&lt;p&gt;If you build the CodeBuild project through CodePipeline then you can’t run that project inside CodeBuild alone. That is because it won’t have the source information or the environment variables as they are held in the CodePipeline. While that feels odd, I did not actually need to use the CodeBuild build button once I had the pipeline up and running.&lt;/p&gt;
+&lt;p&gt;I appreciate that this is an information dump, I hope it is useful on your journey and that by the time you’re reading this, AWS has adjusted its UI and build process so that it’s easier to manage.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Find out what SQL queries are slow on PostgreSQL locally]]></title><description><![CDATA[Your cloud provider is showing you that some of your PostgreSQL queries are slow. Your cloud provider is showing you SQL, and you might have…]]></description><link>https://brainwipe.github.io/2022-11-23-postgresql-turn-on-stats/</link><guid isPermaLink="false">https://brainwipe.github.io/2022-11-23-postgresql-turn-on-stats/</guid><pubDate>Wed, 23 Nov 2022 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Your cloud provider is showing you that some of your PostgreSQL queries are slow. Your cloud provider is showing you SQL, and you might have set &lt;a href=&quot;https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.UsingDashboard.SQLTextSize.html&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;track_activity_query_size&lt;/code&gt;&lt;/a&gt; to something larger than 4096 bytes, so you can see your larger SQL statements.&lt;/p&gt;
 &lt;p&gt;Now you want to reproduce locally but where can you get those statistics from?&lt;/p&gt;
 &lt;p&gt;The process is much the same for Windows and other OSes but I’ll be doing it on Windows.&lt;/p&gt;
 &lt;h2&gt;Switch on &lt;code class=&quot;language-text&quot;&gt;pg_stat_statements&lt;/code&gt;&lt;/h2&gt;
@@ -540,7 +735,93 @@ EgYDVQQLDAtEZXZlbG9wbWVudDEPMA0GA1UECAwGTG9uZG9uMR8wHQYDVQQDDBZt&lt;/code&gt;&lt
 &lt;p&gt;The benefit of setting the image name in docker compose to the full ECR URI is that you can then push all of your built containers in one go. That’s useful if you’re using docker compose inside Visual Studio to build .NET Core Linux containers. Visual Studio doesn’t care what the image names are.&lt;/p&gt;
 &lt;p&gt;To push all of your built images with the &lt;code class=&quot;language-text&quot;&gt;:latest&lt;/code&gt; tag up to ECR, use:&lt;/p&gt;
 &lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;docker-compose push&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Your containers are now stored on ECR!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[.NET Core Linux Daemon]]></title><description><![CDATA[We’re going to implement a simple Linux daemon service in .NET Core 2.x. The daemon will respond to input arguments and write to the console…]]></description><link>https://brainwipe.github.io/2019-02-05-dotnetcore-linux-daemon/</link><guid isPermaLink="false">https://brainwipe.github.io/2019-02-05-dotnetcore-linux-daemon/</guid><pubDate>Wed, 11 Jul 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;We’re going to implement a simple Linux daemon service in .NET Core 2.x. The daemon will respond to input arguments and write to the console.&lt;/p&gt;
+&lt;p&gt;Your containers are now stored on ECR!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Brighter Servicehost as a .NET Core 2.x linux daemon with RabbitMQ]]></title><description><![CDATA[We’re going to implement a simple linux daemon service in .NET Core 2.x that hosts a Brighter Service for responding to events posted to a…]]></description><link>https://brainwipe.github.io/2019-02-07-brighter-dotnetcorelinuxdaemon/</link><guid isPermaLink="false">https://brainwipe.github.io/2019-02-07-brighter-dotnetcorelinuxdaemon/</guid><pubDate>Wed, 11 Jul 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;We’re going to implement a simple linux daemon service in .NET Core 2.x that hosts a Brighter Service for responding to events posted to a RabbitMQ queue. If you just want to create a Linux daemon, see my &lt;a href=&quot;/2019-02-05-dotnetcore-linux-daemon&quot;&gt;post on creating a simple dotnet Core linux daemon&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;a href=&quot;https://www.goparamore.io&quot;&gt;Brighter command processor library&lt;/a&gt; for .NET allows you to decouple the endpoint from the domain. When using the library with a message broker (such as &lt;a href=&quot;https://www.rabbitmq.com/&quot;&gt;RabbitMQ&lt;/a&gt;), you can use a separate service to watch the message queue and respond to their messages. The Brighter &lt;a href=&quot;https://www.goparamore.io/greetings-example/&quot;&gt;Greetings Example&lt;/a&gt; shows you how to host a Brighter Service Activator in a windows server (using a console app and TopShelf).&lt;/p&gt;
+&lt;p&gt;We’re not going to cover how to create commands and events and posting them to the queue, you can find details of that in the &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions/blob/master/samples/GreetingsSender/Program.cs&quot;&gt;Sender of the Paramore Extensions Greetings example&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Install RabbitMQ&lt;/h2&gt;
+&lt;p&gt;Surf to the &lt;a href=&quot;https://www.rabbitmq.com/&quot;&gt;RabbitMQ&lt;/a&gt; website, download the latest Erlang (programming environment that Rabbit runs on) and installer. Take the default options for each.&lt;/p&gt;
+&lt;p&gt;Once installed:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;In powershell, enable the management plugin: &lt;code class=&quot;language-text&quot;&gt;rabbitmq-plugins enable rabbitmq_management&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Go to &lt;code class=&quot;language-text&quot;&gt;http://localhost:15672&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Username &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt; and password &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We do not need to create exchanges, queues or bindings in the management UI, Brighter will perform that task for us.&lt;/p&gt;
+&lt;h2&gt;Create a .NET Core Linux Daemon&lt;/h2&gt;
+&lt;p&gt;We’re going to create a .NET Core 2.x console application that can be run as a service on linux (a daemon). It can also be run via Powershell/Visual Studio for testing.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ensure you have the &lt;a href=&quot;https://dotnet.microsoft.com/download/dotnet-core/2.2&quot;&gt;.NET Core 2.2&lt;/a&gt; (or later) SDK installed.&lt;/li&gt;
+&lt;li&gt;Open VS2017, create a new .NET Core Console Project&lt;/li&gt;
+&lt;li&gt;Once created, open the project properties, select Build, go to Advanced and select &lt;code class=&quot;language-text&quot;&gt;C# latest minor version&lt;/code&gt;. We need this for the &lt;code class=&quot;language-text&quot;&gt;static async Main&lt;/code&gt; below.&lt;/li&gt;
+&lt;li&gt;Using nuget, add the following packages (and their dependencies):
+&lt;ul&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Configuration.CommandLine&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Configuration.EnvironmentVariables&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Hosting&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Logging.Console&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Options.ConfigurationExtensions&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Open Program, remove the Main method and replace it with this Daemon boilerplate:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;token return-type class-name&quot;&gt;Task&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;Main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;&lt;/span&gt; args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; builder &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;HostBuilder&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureAppConfiguration&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; config&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+                config&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddEnvironmentVariables&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+                &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;args &lt;span class=&quot;token operator&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+                &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+                    config&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddCommandLine&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+                &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureServices&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; services&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+                services&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddOptions&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureLogging&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; logging&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+                logging&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddConfiguration&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Configuration&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;GetSection&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Logging&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+                logging&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddConsole&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+        &lt;span class=&quot;token keyword&quot;&gt;await&lt;/span&gt; builder&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;RunConsoleAsync&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;There is no service or configuration yet, we’re going to let Brighter’s &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions&quot;&gt;extensions&lt;/a&gt; set those up for us.&lt;/p&gt;
+&lt;h2&gt;Adding Brighter&lt;/h2&gt;
+&lt;p&gt;We’re now going to add Brighter to watch for messages on our Rabbit MQ queue and print them to the console.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Select your project, manage nuget packages and add the following packages (and their dependencies):
+&lt;ul&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator.Extensions.Hosting&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.MessagingGateway.RMQ&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Creating the Rabbit Gateway Connection&lt;/h2&gt;
+&lt;p&gt;At the top of the &lt;code class=&quot;language-text&quot;&gt;Main&lt;/code&gt; we’re going to create the connection to Rabbit. &lt;code class=&quot;language-text&quot;&gt;Name&lt;/code&gt; allows us to identify what is connected in the management UI, the AMPQ Uri is the connection string with &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt; for username and password (the default). The Exchange is the “port” which acts as an interface between the queues and our consumer console app.&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; rmqConnection &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;RmqMessagingGatewayConnection&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        Name &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;My Linux Daemon&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        AmpqUri &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;AmqpUriSpecification&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Uri&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;amqp://guest:guest@localhost:5672&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        Exchange &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Exchange&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;my.exchange&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;fanout&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; rmqMessageConsumerFactory &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;RmqMessageConsumerFactory&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;rmqConnection&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;After that, we need to build a connection for each of the events that we are going to consume. The connection has an optional &lt;code class=&quot;language-text&quot;&gt;ConnectionName&lt;/code&gt;. The &lt;code class=&quot;language-text&quot;&gt;ChannelName&lt;/code&gt; will become the name of the queue in RabbitMQ. Durable queues are those that remember your messages (events and commands) even if RabbitMQ (sometimes called The Node) is restarted.l&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; connection &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Connection&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;MyEvent&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;ConnectionName&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;MCO.Reporting.Console&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;ChannelName&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;my.qeue&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;timeoutInMilliseconds&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;isDurable&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;highAvailability&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;ul&gt;
+&lt;li&gt;NB: you can customise Brighter by passing an anonymous type when calling &lt;code class=&quot;language-text&quot;&gt;AddBrighter()&lt;/code&gt; &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions#1-paramorebrighterextensionsdependencyinjection&quot;&gt;see the docs!&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</content:encoded></item><item><title><![CDATA[.NET Core Linux Daemon]]></title><description><![CDATA[We’re going to implement a simple Linux daemon service in .NET Core 2.x. The daemon will respond to input arguments and write to the console…]]></description><link>https://brainwipe.github.io/2019-02-05-dotnetcore-linux-daemon/</link><guid isPermaLink="false">https://brainwipe.github.io/2019-02-05-dotnetcore-linux-daemon/</guid><pubDate>Wed, 11 Jul 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;We’re going to implement a simple Linux daemon service in .NET Core 2.x. The daemon will respond to input arguments and write to the console.&lt;/p&gt;
 &lt;h2&gt;Create a .NET Core Linux Daemon&lt;/h2&gt;
 &lt;p&gt;We’re going to create a .NET Core 2.x console application that can be run as a service on linux (a daemon). It can also be run via Powershell/Visual Studio for testing.&lt;/p&gt;
 &lt;ul&gt;
@@ -636,93 +917,7 @@ info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting
       Stopping: Hello World!
 info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Console&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;DaemonService&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;0&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;
       Disposing Hello World!
-&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;11:33:59&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt; MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Console&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content:encoded></item><item><title><![CDATA[Brighter Servicehost as a .NET Core 2.x linux daemon with RabbitMQ]]></title><description><![CDATA[We’re going to implement a simple linux daemon service in .NET Core 2.x that hosts a Brighter Service for responding to events posted to a…]]></description><link>https://brainwipe.github.io/2019-02-07-brighter-dotnetcorelinuxdaemon/</link><guid isPermaLink="false">https://brainwipe.github.io/2019-02-07-brighter-dotnetcorelinuxdaemon/</guid><pubDate>Wed, 11 Jul 2018 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;We’re going to implement a simple linux daemon service in .NET Core 2.x that hosts a Brighter Service for responding to events posted to a RabbitMQ queue. If you just want to create a Linux daemon, see my &lt;a href=&quot;/2019-02-05-dotnetcore-linux-daemon&quot;&gt;post on creating a simple dotnet Core linux daemon&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;The &lt;a href=&quot;https://www.goparamore.io&quot;&gt;Brighter command processor library&lt;/a&gt; for .NET allows you to decouple the endpoint from the domain. When using the library with a message broker (such as &lt;a href=&quot;https://www.rabbitmq.com/&quot;&gt;RabbitMQ&lt;/a&gt;), you can use a separate service to watch the message queue and respond to their messages. The Brighter &lt;a href=&quot;https://www.goparamore.io/greetings-example/&quot;&gt;Greetings Example&lt;/a&gt; shows you how to host a Brighter Service Activator in a windows server (using a console app and TopShelf).&lt;/p&gt;
-&lt;p&gt;We’re not going to cover how to create commands and events and posting them to the queue, you can find details of that in the &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions/blob/master/samples/GreetingsSender/Program.cs&quot;&gt;Sender of the Paramore Extensions Greetings example&lt;/a&gt;.&lt;/p&gt;
-&lt;h2&gt;Install RabbitMQ&lt;/h2&gt;
-&lt;p&gt;Surf to the &lt;a href=&quot;https://www.rabbitmq.com/&quot;&gt;RabbitMQ&lt;/a&gt; website, download the latest Erlang (programming environment that Rabbit runs on) and installer. Take the default options for each.&lt;/p&gt;
-&lt;p&gt;Once installed:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;In powershell, enable the management plugin: &lt;code class=&quot;language-text&quot;&gt;rabbitmq-plugins enable rabbitmq_management&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;Go to &lt;code class=&quot;language-text&quot;&gt;http://localhost:15672&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;Username &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt; and password &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;We do not need to create exchanges, queues or bindings in the management UI, Brighter will perform that task for us.&lt;/p&gt;
-&lt;h2&gt;Create a .NET Core Linux Daemon&lt;/h2&gt;
-&lt;p&gt;We’re going to create a .NET Core 2.x console application that can be run as a service on linux (a daemon). It can also be run via Powershell/Visual Studio for testing.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Ensure you have the &lt;a href=&quot;https://dotnet.microsoft.com/download/dotnet-core/2.2&quot;&gt;.NET Core 2.2&lt;/a&gt; (or later) SDK installed.&lt;/li&gt;
-&lt;li&gt;Open VS2017, create a new .NET Core Console Project&lt;/li&gt;
-&lt;li&gt;Once created, open the project properties, select Build, go to Advanced and select &lt;code class=&quot;language-text&quot;&gt;C# latest minor version&lt;/code&gt;. We need this for the &lt;code class=&quot;language-text&quot;&gt;static async Main&lt;/code&gt; below.&lt;/li&gt;
-&lt;li&gt;Using nuget, add the following packages (and their dependencies):
-&lt;ul&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Configuration.CommandLine&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Configuration.EnvironmentVariables&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Hosting&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Logging.Console&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Microsoft.Extensions.Options.ConfigurationExtensions&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Open Program, remove the Main method and replace it with this Daemon boilerplate:&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;token return-type class-name&quot;&gt;Task&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;Main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;&lt;/span&gt; args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; builder &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;HostBuilder&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureAppConfiguration&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; config&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-                config&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddEnvironmentVariables&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-
-                &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;args &lt;span class=&quot;token operator&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
-                &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-                    config&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddCommandLine&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-                &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureServices&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; services&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-                services&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddOptions&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;ConfigureLogging&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; logging&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-                logging&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddConfiguration&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;hostingContext&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Configuration&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;GetSection&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Logging&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-                logging&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;AddConsole&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-
-        &lt;span class=&quot;token keyword&quot;&gt;await&lt;/span&gt; builder&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;RunConsoleAsync&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-
-    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;There is no service or configuration yet, we’re going to let Brighter’s &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions&quot;&gt;extensions&lt;/a&gt; set those up for us.&lt;/p&gt;
-&lt;h2&gt;Adding Brighter&lt;/h2&gt;
-&lt;p&gt;We’re now going to add Brighter to watch for messages on our Rabbit MQ queue and print them to the console.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Select your project, manage nuget packages and add the following packages (and their dependencies):
-&lt;ul&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.ServiceActivator.Extensions.Hosting&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.MessagingGateway.RMQ&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code class=&quot;language-text&quot;&gt;Paramore.Brighter.Extensions.DependencyInjection&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Creating the Rabbit Gateway Connection&lt;/h2&gt;
-&lt;p&gt;At the top of the &lt;code class=&quot;language-text&quot;&gt;Main&lt;/code&gt; we’re going to create the connection to Rabbit. &lt;code class=&quot;language-text&quot;&gt;Name&lt;/code&gt; allows us to identify what is connected in the management UI, the AMPQ Uri is the connection string with &lt;code class=&quot;language-text&quot;&gt;guest&lt;/code&gt; for username and password (the default). The Exchange is the “port” which acts as an interface between the queues and our consumer console app.&lt;/p&gt;
-&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; rmqConnection &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;RmqMessagingGatewayConnection&lt;/span&gt;
-    &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
-        Name &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;My Linux Daemon&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        AmpqUri &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;AmqpUriSpecification&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Uri&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;amqp://guest:guest@localhost:5672&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        Exchange &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Exchange&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;my.exchange&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;fanout&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; rmqMessageConsumerFactory &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;RmqMessageConsumerFactory&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;rmqConnection&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;After that, we need to build a connection for each of the events that we are going to consume. The connection has an optional &lt;code class=&quot;language-text&quot;&gt;ConnectionName&lt;/code&gt;. The &lt;code class=&quot;language-text&quot;&gt;ChannelName&lt;/code&gt; will become the name of the queue in RabbitMQ. Durable queues are those that remember your messages (events and commands) even if RabbitMQ (sometimes called The Node) is restarted.l&lt;/p&gt;
-&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;csharp&quot;&gt;&lt;pre class=&quot;language-csharp&quot;&gt;&lt;code class=&quot;language-csharp&quot;&gt;    &lt;span class=&quot;token class-name&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;var&lt;/span&gt;&lt;/span&gt; connection &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;Connection&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;MyEvent&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;
-        &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;ConnectionName&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;MCO.Reporting.Console&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token constructor-invocation class-name&quot;&gt;ChannelName&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;my.qeue&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;timeoutInMilliseconds&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;isDurable&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;token named-parameter punctuation&quot;&gt;highAvailability&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;ul&gt;
-&lt;li&gt;NB: you can customise Brighter by passing an anonymous type when calling &lt;code class=&quot;language-text&quot;&gt;AddBrighter()&lt;/code&gt; &lt;a href=&quot;https://github.com/BrighterCommand/Paramore.Brighter.Extensions#1-paramorebrighterextensionsdependencyinjection&quot;&gt;see the docs!&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;</content:encoded></item><item><title><![CDATA[ASP.NET Core 2 API on Docker with OAuth (Part 1)]]></title><description><![CDATA[I previously explained how to get a ASP.NET Core 1 site running on docker in this post we’re going to do a similar process but use .NET Core…]]></description><link>https://brainwipe.github.io/2017-10-30-oauth-on-docker-part1/</link><guid isPermaLink="false">https://brainwipe.github.io/2017-10-30-oauth-on-docker-part1/</guid><pubDate>Mon, 30 Oct 2017 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I previously explained how to get a &lt;a href=&quot;/2017-05-23-docker-linux-dotnet&quot;&gt;ASP.NET Core 1 site running on docker&lt;/a&gt; in this post we’re going to do a similar process but use .NET Core 2 an add OAuth authentication. The first few steps are the same, it starts to change when we create our projects. &lt;a href=&quot;https://oauth.net/&quot;&gt;OAuth&lt;/a&gt; is a protocol for allow secure authorization. We will be using &lt;a href=&quot;https://identityserver.io/&quot;&gt;Identity Server 4&lt;/a&gt; running in its own container to provide us with a token when we give it a username and password.&lt;/p&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;11:33:59&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt; MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Console&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content:encoded></item><item><title><![CDATA[ASP.NET Core 2 API on Docker with OAuth (Part 1)]]></title><description><![CDATA[I previously explained how to get a ASP.NET Core 1 site running on docker in this post we’re going to do a similar process but use .NET Core…]]></description><link>https://brainwipe.github.io/2017-10-30-oauth-on-docker-part1/</link><guid isPermaLink="false">https://brainwipe.github.io/2017-10-30-oauth-on-docker-part1/</guid><pubDate>Mon, 30 Oct 2017 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I previously explained how to get a &lt;a href=&quot;/2017-05-23-docker-linux-dotnet&quot;&gt;ASP.NET Core 1 site running on docker&lt;/a&gt; in this post we’re going to do a similar process but use .NET Core 2 an add OAuth authentication. The first few steps are the same, it starts to change when we create our projects. &lt;a href=&quot;https://oauth.net/&quot;&gt;OAuth&lt;/a&gt; is a protocol for allow secure authorization. We will be using &lt;a href=&quot;https://identityserver.io/&quot;&gt;Identity Server 4&lt;/a&gt; running in its own container to provide us with a token when we give it a username and password.&lt;/p&gt;
 &lt;p&gt;In this part we’ll set up the API and Identity Server. In &lt;a href=&quot;/2017-10-30-oauth-on-docker-part2&quot;&gt;Part 2&lt;/a&gt; we will add a client and authorization to this service.&lt;/p&gt;
 &lt;p&gt;The finished code (for both parts) is on my &lt;a href=&quot;https://github.com/brainwipe/DockerDotNetOAuth&quot;&gt;DockerDotNetOAuth&lt;/a&gt; GitHub repository.&lt;/p&gt;
 &lt;h2&gt;Why run a separate container for Identity Server?&lt;/h2&gt;
@@ -750,12 +945,12 @@ info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACTUlEQVQ4y52STWsTURSGZ+dGwQ/w57hQUBH/hiux6kbUXam6kO5cKFI/skiq1o0bMaZQsBSKttNiVWI/kmYmmUw+J5PJZDKZufPIvWlskYLigYeXOXfOO+ecO5plmnhOCxEGxANfaRJHIGISESuViGiIiKPfmhyAaAAI+tYO2lp+h7XtMvlyg+9GnXKrS7vdplAoYBgGxWIRy6pyWIgkUbr+bZOnr+YJGjW09OIPUot50svbpL8YfNpq0HU7mKZJ1bJoNps4jkOn06HrurRaLTzPU0bJnmFmocKDOQO/aqAZu0VKhqEKZKHv+wwGA1XU7XaJogghBHEcK+SzVJmTJELg+QHdAYT1EppZ2qVareJ5XVzXpd/vE4ZDbLtGEAyIopjhMFJIszAMaTuO0mEk80PiaIjstWcV0WyrQqvdVt3ILmWHsgNZEMeCf4nx6L40rBgl6vWGMpJjjg0Pvvx3xL6hsVvANMtqbMnYcLSjZG9/glgcQjwmRoxHrlbK1Op1bNtWKEOR8D8R2CU0q2zS6bj0ej06rgsi4m12hSt3nzAxOcPN+yluPUxzZ3p2jwy3pzMqNzH1guv3XnJt8hlXp1L8XNfRPEdeiKv+vVazqb50Y+o52pEzaKcvoZ04P+LUxREnJRdGuaNn0Y6dQzsuzy+z8CGHZjsN2p6P4/l0eoHahb5VZ+bdZ1LvdWazOm9yOq8/rv6Bztz8GnM5nceZLI9mc1R2ttC2V7KY+qLC3limlV8lKG8S2QVCqwC1AjQPobFPY2OJ6tcl2qvz/ALIF6cBdQNpfAAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACUUlEQVR42p2T7WvTUBTGr4igH3SKf48wmIr/kJ/8IKLgfJ1TxKFDbQsKMnE61FYRZAMF54c5N1ZqaZc0L03SNG9Nmya5eTy5nW9DKnjhx7lJOM95zrk3rCW14Hct8OEAPOqLmKUxwFNBxhOKHDwZIiN+xCyJf2OIfIV6E6xab6AqaZBNB03dhukG8DwPkiRBURTIsgxd1/G3lWWZiJKs4NHiO4QdE6y0vIkHy1UUP9RR/CTjbdWAT4JyS4amqjAMA5ZliSK+78NxHARB8Ifg0xUVp+e34OkaWKPRxLemBKPThWF34fo9RFEkknOROI6pY44kSYhUxDRNhdhIMEPXG0D3MsQ2CaryNrWkIewFCHwPg34fMSWZ5GowiCiZ7wiNiOMEruNS0aHYDwmeJqMZmi2wtqbCtm3hyHVdhGEoHPRJOBcYN7vdz/1cUKVZ5W5yoXw2I0GOXTnj109BBay13RSnaZomDCIXTMhhLprS7ET8F9QJz1s28pZVBe22AU3TCJUEe+IQ/sfhIHeoKTLNzhPOfD8Ql/r9ag1nZ5/g4p0FXJl/gdnCa9wqlXGTELFYFu8u31ui70u4dHcRF+aeo/Z1Hczvduje+YQLu2OLStMzj8H2HcPeo6fAJo6DHSKOnPzFYWLiBNj+SbADk9hzcIr2Uyg/ewVmORacoCfunxuE4BnHx/Umzs29xPT9Cq4+rGCmWMG1QllwvVDZiWXcKL0RnL+9gDPUkXBY31iBWl2DuvUFZn0TrlxD1NExpEIR/eOpZwG98bRra5A2PsOrruI7bJ6oqrwckMQAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot;
-        title=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot;
+        title=&quot;&quot;
         src=&quot;/static/0b2d1cc0bf13b1d7b892daaa9809fe6b/f058b/docker-settings-share-drive.png&quot;
         srcset=&quot;/static/0b2d1cc0bf13b1d7b892daaa9809fe6b/c26ae/docker-settings-share-drive.png 158w,
 /static/0b2d1cc0bf13b1d7b892daaa9809fe6b/6bdcf/docker-settings-share-drive.png 315w,
@@ -785,12 +980,12 @@ info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 69.62025316455697%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAOCAYAAAAvxDzwAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACL0lEQVQ4y31T2W7bMBDUr0gWdVniIYqURPmIa8uB3aBAf7IPfStaoImdpkmT/5qCtKUaTdqHAYXl7nB2duV9+/wJt1+/4Ol4h8fD7YjnH0cHG395uB+/f90f8PzwgMfjAU/3dy72dDzg5913V+c1SiGdUvh+iMkkgh+EWFyt0ZoZuJAoqEBBOdI0ByEJoihFzipXo3QLLhTSjCLLKBiT8Lq6gTFzSKmgVI0sK7De9FBagzEOzgWiKEYYEhASgRACWlAUBcVud4P9/gZ9f43NZgutGnhKlOi3e9S1AecS+ZRhsVyilKUjE0IgTVNMJuEISq2iKdp2Bq1blKWCEBUYK0+Es/kVhJDIc+YU7vbv0c0WrsCqV6pBUQhQ237BUdede9zmTqd0hK13HtZN5y5tsg22Zg5jLOGfsyxrSFmjLDWaZuZOm2trLuEtTIf1eus8HBJsW77vIwgC+H7gziCYjLAx6+cg4JLYm7cGq9UGbduNF3GcnAfwb8Rx+jZhLSvkBT97cEqIouRiqq9h7+yjl4QDPMm4M5tRDk5Pxo9rEhJ3vkY4Eg6ko0ItFaRZoWyvUJo1uKxBnMIIIYlBojdAYtfFMNkT2VmhEgJhlCCjEm3/Ee36A5R5h6pZQtYL8Kp7EzktwZhAkmQInaeJg2d0hYLalwpstzv0/Q7z+Qpdtzyvi3YrM2BYHVlpN8yqUmCUOm/t9L0sIqfW/jLdrs7/BmPV2L9Fqhaz1TW0Nu7X+w3qbtG6urL7bgAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 69.62025316455697%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAOCAYAAAAvxDzwAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACSElEQVR42nWT627TQBCF8yLQxrG98SW7vt/WiZs0TQoplRBPh8QfhKANTVIKD3iYHdMg1PDj06y9e45ndsaDr58+4u7LZxy2d9jfG77R+h4/9zs87R7w+H2LX4f9cf3jYYunwwEHWj/S2rwz53ekfSQGeZLCFT5evT7H2blFcYhpt0CWVwgnCp4fQox9jGwXZ0MbQ8uG8CVr0qyCVCnth3AJRecHuqrQthcoigplWSMMFS6XS+R5gTiKGSEEHMeF6wpGSQVJ3GxusSHWqzdYXq3RlFWf4Wq1IcMaSiUIA4Wuu0CcJIiMYRzD83xY1gijkc1IKeH7AWkapGnBOknEKibDOIHWMxKnnF0QSLzdvCPTBWc+nc5R1y0ZZ0TOUesOSVKQ6YQSkL2OiGWEQU2lVlWLgDYnk4g3cy6/4azLQnPsDXuKvH82Z42GdQQbzrTm+vO8PB6wbQfDocVlPvNcrsGyLL7LZ7N/DRtN5V1SlvpoKIRHTRDHJhjM819cjMfeacOCmhIE/d0ZwzA0hmMW/Q9TgfnoSUPTFL4bakoSUWepU4Izcnrsl9hUtjGUMj6RYUpmFY1JPUfcrhBlNQ+t41KWJHJpqE9Ce9zlP9dkuhyZwa5S+lPoXkKZYnb9AbP1ezSzK9TtAmUzR1pMT6JUhizJ4HsB6R2uKhwLDDLK0CPnMX2tm6+Yop4hL0mYa0yi/AUhmSmaw+nFJRL6RVWcwqKKzAQMOumiCV3oiYlOT+CgDmyO5v0pWinQRR5WusTtcoHrtsJNW+A3XIPQC8Dax/kAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Creating a new ASP.NET Core 2 project&quot;
-        title=&quot;Creating a new ASP.NET Core 2 project&quot;
+        title=&quot;&quot;
         src=&quot;/static/7292204c37a291e03fb110bdf351c971/f058b/aspnet-core2-create.png&quot;
         srcset=&quot;/static/7292204c37a291e03fb110bdf351c971/c26ae/aspnet-core2-create.png 158w,
 /static/7292204c37a291e03fb110bdf351c971/6bdcf/aspnet-core2-create.png 315w,
@@ -817,12 +1012,12 @@ info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACMUlEQVQ4y42SS27bMBCGfZBeqfuepkco0F2XWXXROzSrNo3iBgXSPAzbessW9SAlShZlJ46/QowVJFl1gA8iCfGf+YczSZczVoGHXIUUsYcIXUTkE7tz0iigqyV9W9M3FdumYtfWr9loei3Z9obi6ieTOPCIkgQ/Vfz1BHdujOd5pEKwFjlRVlHmikY31FpTSkVRSsvTuiTLMqTekN9dMilEyjry+fyj58OXGd+uHwnmN2x399ze3LJ9eEBPr3hoNmyMYeo4OOe/uHAczs7OcBzHns2WHuJmyqStK2DLx9MD7z7ByeWOVqY0bUcYhhhjMF3Hfr+nM4aZG+IGMaskIY5jy7CuN4bs9jcT0zYMcfIH3n+F797B7k2/tT9vNh1jDIKirJCVpmkGGouua3TXPwlWlWTdGg77e9JCA48ceB2HwzGJMfbyIKa1pqoqlFJUSqLHCrtasdvd0/c9QmTW2ijyElth1xFF0TNSStq2paoUujsK7rqW/42uM7iua5nP5ywXS9sWJeXR8pSJylK0bqyFYSyaprVZR5qB41ld1wgh7JgM3+HRBsGyKKjaDnF9wSSNA3w/wHOXhEFAWeS2L2VZWitDn14yJB4ZH6W2lsdHyQVBEDBbeHhxxiJcs1qntoJSDiK1rWzkbQKLUsexGSzngjhJ8PwAP0rww4QwikiSFZFQZKV6Fnop/PJscNKYLflQocrTY580jdbPI2F5c/GtkFQVMy9m4cfcLZYsz0/5B94QzfwuCS6hAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACOklEQVR42m2SyW7bMBCG9Rx9qwJ9rQJFgd6K3nvtucfGzYIAaRtDtmztKyWKIiXZlmzHf4aSnTioB/g0I4D8h7MYmT1D4rvgSYg88pEFDrLQR+wsKfbQViW6RqGr5Ugj0Q+oY6ywqQX6zQrCeoARk1gQhnDTCn+WDFM7huO4SLMMKcsRsAo8F2hUDaUacF4iLzgKrikHzxhDIWsUjgmjZBm9yMbX2x4fvpj4dv8EZz7FpusxM02s+h7tg4m+KNE/7XF/d4ffkwlub25w9esKN9fXQzydW2DWPxi1KAH0+Hx9wLuPwKfJHq3IULcrhEGApmnQdRvsdjv0JL5wQ9heiCRJEMUR4ihGHMeQdL6wpzAaKaDtx/yA99/Jzw7Df7/dDQe14Mm6rgPj1AKhqHyFuq5HKFbtehRUokBcr/G03yHjivwe/9nhVVBJiaYeBaWsUFWEEK+Cq4pju92i67c0iJzi3ZnQ4Y3uhgT1AANqhe/7NCA+VCBJ9EVwrcTFy5dMv9B1Xdi2jcVyCctaICDhsuRQq6NgmSWQw0rU5HVfGsraHmneoMvUK3JCvzYkOC9Q1S3yxSOMLPTgeT5lXcL3PBR5DkE90eVUlXjt0xEteuKUSJ95KbnKU+pJiLnlwIkYln6KKEnHZS21iKQLZ9D/eYKRs6FIqj/JObwwgZ/kA0HCELMCIW/BZEs7uR4uXEJqmhXqfg/uWTD0RxYZVE69JAbPRioWocoiiPQyPIkwN+ewzBlmj39hTX7iGfIfzqeW9ouZAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Select Web API and check the Docker Tick box&quot;
-        title=&quot;Select Web API and check the Docker Tick box&quot;
+        title=&quot;&quot;
         src=&quot;/static/01c608e8cc1aeef913c9b46886db7918/f058b/aspnet-core2-docker-linux.png&quot;
         srcset=&quot;/static/01c608e8cc1aeef913c9b46886db7918/c26ae/aspnet-core2-docker-linux.png 158w,
 /static/01c608e8cc1aeef913c9b46886db7918/6bdcf/aspnet-core2-docker-linux.png 315w,
@@ -863,12 +1058,12 @@ info: MCO&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Reporting
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACOUlEQVQ4y42SzW7TQBSF8x68E8/AjrfgDeAh2CF23bDrDgm1RSmlSdw28f/vxPF4bI/txEk/ZOeHtGLBkY5GMxqde869dyRMA+GapIFDaJuE9oLIMQmsBY3KaFVGU0qaQtIWknWZs67UiZtKDf/WTc3y7juje8PkxvAIhEQIgev5LEyTMI6J/IDc9VCxQBUlMlcs0xViuSROBIk4MEkQUpFMfzL6cBHz7rPPxW+N/XDHptsymUzouo7ZdMqm61DXd3RFhW4aft2OuR2PeXx8xDAMHgwDYzbDcn3iyRWj918Vbz7Bt4cOthrdtMRRTFVVOI6DrmtqrdluO+q6Ye4lBMmKsihQSu2Z5xR1SzK9YfTxsuDtFxhHDNjunoezbVs8z6OqNEfUdc0qy5AyR0r5l1mGquq9oFYr8rah22xYhDm73Y7XeH5+PgnmUp6cvRDUB8Eqz2jaDU3TIJKE7XZ7EjlnD601QRAQhRFhGJJlGWVZIuWZ4FqX/C+0rrEsC8d2ME2T+XyO67pkqxVKNyTTa0ZZEqHUvsG5UhRFOVQ9suh5eMvznDiOB0ZRNAyt73O6XCJLTXx/xSjybCzLxlzMcWybdCmGKGmaDlFeNP+sfz33xQryIXKzjyxFjG3bGE8mppfw5IQEYTS4SFdymGjv7MjXBY5DyYcp95FFjOf7mJY9LKfl+Diui+8HuHFGkmYnoXPh87c+Sb+HoneYiehgXVEMPVQvFvZfYsf7KpMYpseT5TF7mjP/cckflc/P8VJpBxkAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACNElEQVR42nWSu5LTMBSG/Ra8Fz2vwRPQ8gQ0VFvRUNDRMMMwNAt7y65zceKrbMm2JMtOYifZ/TlSkg0ZFo0/H8mS/6Nz8cTcRxGHqFiCnGwezt06CwOsGonBKPQO7RjaBkPXYNMZYj+3+8N6BTm9gjfyF/g5ihEVCkIIpBlDMJ+DFQVymuskgSk4TGPQEGVVg4sSORcoCC6s5eC1hgju4b37wvHmY4yL3z0W/jWG7Q6j0QjDMGDs+1gOPbqrewxljc3jDrc31/h1eYnpZAKf9seOBwRhDD69hff2s8Sr98DF9Q54XGHdb8DpRsvlEkkco21b9P0a2+3WOVlkJdJC0ncDYw40DcxqjTIYwfvwXeL1J+Bb+AQ7do9k6bECWZY5wePo+x5SKiilCeXQWkOTbbrVXtCoEpISagUCpsnu8M94OglagYZuZFF6L3wm2MoKKwpzGDYoS+GET0JPZ7pWkDGGPM+Rsxx1XbsIzgRta7z080vDCkZRhDAMES4WmM1mbl3XFZrlQbAuqDUOLaFtck1LXrsD7Rk2TE4tUlBLWWIqWkJtVVUllOkgpnfwioS8hRGCgLyR55L6SkpJhyrKj6ScqecCWI75s5U9OrJnnkNWIidPCcaTOeYpxyzKkVJ+7E3Kel9RV8kjf1X4hDwJaoqfiQphwhAx4YgZR8ZLJFUHrjsYOtz8B21plzDDDlU4gWdfuizQCMol4Szfo3gKVaSQ+ctULMX4YYzJgw//7gaTH1/xB3yy0JHYC/3dAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Create an empty ASP.NET Core 2 Web API project with Linux Docker support&quot;
-        title=&quot;Create an empty ASP.NET Core 2 Web API project with Linux Docker support&quot;
+        title=&quot;&quot;
         src=&quot;/static/8072c9c04da81d8037364ecd124d2349/f058b/aspnet-core2-idsvr-create.png&quot;
         srcset=&quot;/static/8072c9c04da81d8037364ecd124d2349/c26ae/aspnet-core2-idsvr-create.png 158w,
 /static/8072c9c04da81d8037364ecd124d2349/6bdcf/aspnet-core2-idsvr-create.png 315w,
@@ -987,12 +1182,12 @@ CONTAINER ID        IMAGE                   COMMAND               CREATED       
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 83.54430379746836%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAARCAYAAADdRIy+AAAACXBIWXMAAB2HAAAdhwGP5fFlAAACOklEQVQ4y52UWW/TQBRG8///A0/QF96Q0rQCgcQbRUKlojTQdPF4abyO420WLzkoDpSoLVXplT6NJV+f+e6945mEvseNuObySiC8G7wgJJUlclWPylY1VVnT6ZpW/VWnG6o8wzYlti4xqiE5mjGR+YokSXj/s2F6ZpidaWZzw+EPy8HcsH9mOQksfddibIu1LcZYtDZoYynLCs/zkGXN8tMBE20MeZ6jTMWqycmrjLzOqHVF11na1mBbg7YKZRq01fR9P0pKOcoVgiTLWbx7zURpjet5hOGSZRwSy4ioiFjmy1E3v9e0TMkqibKKYT3wUJxOX20caoIgIPAD4jhGlhlxkYyQcBWOa1TEI0y3+vbj9Xq9o+0G3/f3Ng4VQjj4vo/ruKQyJSpCvMwnkD5O4uBnPiJ1EYnAtPYB4HoXqFksFjjONZcXl/i+R7AMcIOQbFVQNjWN2aihNjX9MNwCd8G3wEYphCPwPBchxOh0uQyJQklTd/Td/V79ATwI7LqeMI1IZELVbB0MozaTHBjulLbr7J/Aoi4oVYkyiqEfHnX00Ltb4Gxvew6FL3D8axzfGYdyt+mPQXdzvk1fMtk8yEbiZR5JlWA6cy/xsdjNEx/fMGm7jqIqqeoSayzW2rGHT4XunsP481smmyFEMhqhG6BS6tnA8OhwW3JcRPipO/6r26yB9fA/6rfAzeUw9tBU+GVEpms6nh/xlw9MiqtTsvNj5OIr2cUJ6fkxtZij3B80T9YcFVzgTl/wC2/5GWxXelXgAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 83.54430379746836%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAARCAYAAADdRIy+AAAACXBIWXMAAB2HAAAdhwGP5fFlAAACIUlEQVR42p2T63KbMBCF/f5P0x9p+xqd6SVJ3RlzByEhEAIkAfbpwY7bTtM0l/XsAGb5dLR7tNNFjCqNkccHZEkKUZZQUmKwFiNzeMh5tFim37m6Ab7vYLXEymc/sK6MsJOiQqMU7lONd58n3Hx1uPni8OF2xvtvHjfMj3cBwgQsywwXZvgQ4PyWHmFeICmgblq0VY5dmAbYTcUwwHAlbTsoq9HYFtP24bxBAj8MBHn42Z/vT6cTpmmEohhBUVGcQKYH7I4skKpBURQQskKlSsiuRtnx/pptidpILtKgHTsEKr3GBt5yi05kF6DWGnmeo8gL6I7q+oYgcYaWhAkjIAnsncXxeMTfcQUakV8VSqRZhizNqLQkUBFUINM50iZBqjg0XSCSESTf/Rd4WthwNnX/fY/D4YCYvSiqDDn7kokarTXoJwNLdb3r2dfpeYU1gSktE8cR4iR52H7NVli48YiH+ifjEdDSQ0VdQrcNJjed+7SuC68rr2z6H79ngat3tEKAGQ0GP5wt8dp4pFDpBnHG7eYRcprTcZG3ALtqsw3NOnN7acNBcKrSKqz/sMZLgEMjsFv8dD5KZjDn/i08Suu6/ip6DTCY5qJwJEjoGs55HqcJIYQ3AX2nNqBDWAMSmrcdGizc/qXq+OI80Q0XoLwMZeGfOY9X0pWwfD69ccreaOzG9B4m3aNL7tDGd9DRLfpsDy+iF6erDggqRf/jE34CzuEivHNjMTUAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;The Identity Server Discovery Document&quot;
-        title=&quot;The Identity Server Discovery Document&quot;
+        title=&quot;&quot;
         src=&quot;/static/e00d104a52bd5136609306cdefcd5fc3/f058b/aspnet-core2-wellknown.png&quot;
         srcset=&quot;/static/e00d104a52bd5136609306cdefcd5fc3/c26ae/aspnet-core2-wellknown.png 158w,
 /static/e00d104a52bd5136609306cdefcd5fc3/6bdcf/aspnet-core2-wellknown.png 315w,
@@ -1097,12 +1292,12 @@ Test Client
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 13.924050632911392%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAADCAYAAACTWi8uAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAAmUlEQVQI11XLS07EMBAA0dz/kKBRMhknxHbbbbcDCl0jPkJi8ValmlIp1NboZlRVVJXe+5+iimhFvprZj97/+/1LKUzXsuJhw0JA5pn9diOtK8eyEO93PkLAXl55nxf8EfD1ge87HiN+HPjbASKcOVO3jYkseBYuKd9MBE2JGiMtZ1wVpECteMqQM7QGY4AN3AacJ59jcI3BE+Sw5exVbRc0AAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 13.924050632911392%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAADCAYAAACTWi8uAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAAkklEQVR42kWP2w6DIBAF/f+PbE2sl8Qb4KLSWqeHaNKHyZmchbAUcwjYtmExEpYFMyPKM7nz6pwI6m1bL+6ZrbdrtsrHaaI4m5aj7TDlWJYMVcVU1/TKoO79qlkfT751C02mg35At+8cOfNSw4D1PQXOc4rDBz4iOscyzwS9lnRQa4PPKSZ3uX7Evv8zJQ75NyV+/YHmNtTDO5YAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;We haven&amp;#39;t set up CORS yet&quot;
-        title=&quot;We haven&amp;#39;t set up CORS yet&quot;
+        title=&quot;&quot;
         src=&quot;/static/24671e2b30e554593b2173c20f1e09f6/f058b/aspnet-core2-cors.png&quot;
         srcset=&quot;/static/24671e2b30e554593b2173c20f1e09f6/c26ae/aspnet-core2-cors.png 158w,
 /static/24671e2b30e554593b2173c20f1e09f6/6bdcf/aspnet-core2-cors.png 315w,
@@ -1211,12 +1406,12 @@ Origin &apos;http://localhost:32773&apos; is therefore not allowed access. The r
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 32.278481012658226%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAGCAYAAADDl76dAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAA8ElEQVQY05VQ24qDMBD1//9sYV8Ki4tRc1OEba1NNBqDxVNmlvRh33bgcGbOZG4p7tcfOOcRQsC2bVjXFd57zPPMPukE0px7sE7v/iIdBy6fHyj8dMf1duOilBInl2XhZvu+I8bITI28d5yjOINqpmnCElaIrwuK4B9QSkG2LbTW6LoOfd/DGMM6+aRRLvtSSmZrLXMtBJTWUOIbhZtGCCHQNA2DfKnkO67rmrWyLJmrqmIt6xSP4wgy24rfk2kbS1ONQa81tJQ8fRiG9xZ5a2IC5QjOOT75BNBRw7gGHMeBMyWcmZ9P/Mfov+OeYJsKL8gcwszfHha4AAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 32.278481012658226%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAGCAYAAADDl76dAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAA/ElEQVR42mVQa2+DMBDj//+4aV8qQSGBrYQCo7xCeAa83K1M0xrJ8p3tS6Lz6q8Sfd/DGINpmjCOI/daa9ZOkNZ1HeuU+491s7i8v8HrmweqquIhay2WZXH1iHmesW0b1nVlJl/rn4epP0EzbdticDPCv8DTbQ0hJMIwRBRFkFIiSRLm6/XKHMcx+6RTHQQB85knT8bOC333w/rhhIjNSAiEz9BfkOf7Pj9Aw8LlCKTT5WVZwu4HVCLgmb5FlmVQt09kaYq7Uq6+IXV1URRQric/z/NfJv0E7bZpGhwAsg8Jb+g7XqqlHT55c3wcxwv2fX9hOmYYYMYJKhb4Bqx1w31bYBQAAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Chrome console has both the token and the values from the API&quot;
-        title=&quot;Chrome console has both the token and the values from the API&quot;
+        title=&quot;&quot;
         src=&quot;/static/d12170c7cb80a3b028c5b7a4bac54197/f058b/aspnet-core2-result.png&quot;
         srcset=&quot;/static/d12170c7cb80a3b028c5b7a4bac54197/c26ae/aspnet-core2-result.png 158w,
 /static/d12170c7cb80a3b028c5b7a4bac54197/6bdcf/aspnet-core2-result.png 315w,
@@ -1645,12 +1840,12 @@ COPY . /usr/share/nginx/html&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 79.74683544303798%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACrElEQVQ4y5WSy27bVhBAqdRR7BZN7VhN4dpx0AC2o0ixSPElvkRSfImUKJmyraLfWXTTRRfxK82igd247d+cQmSBOIFQwIuDuTPAPTO4d4Rff/mZ3y8vuDx7w9X5WRnfXpxzdf6Gq4sz3r295N3VZZkv6jfv/+Cf2w8Vf33g79s/ub1+z831NTcXvyGcnMzJixOKk1OmxTHFrOBodszoaMakmJHlU9JxTjjMSoIkxY8S/CDGG4S4C4IINxwyyxKEbDImH4/IspQkm5KOcoIowRlOiZIU2w0ZRDHH8znjRcPTH0nHE7woxI9TvGjIKBgQxEOOYh/heyug6dm0HIWOp7Jv6+zbGi9tlW1jUe9yYGk8lR2eyhYNyeQ72UBOC6zRKe5wiuXFtHQP13EQHqkD1g2LbUdhx5bZclS+NFy2HZWtvs5zV2bTtFnTAta0AcKhyRddh66f0Y9zwvwYMxrTcRIsy0F4bEasKgPqkk+9G7Ii+jySXFZEj4eiy0pnQZ+66LAqVdQlB90dEIcRQRARhTFRnFLEA4RwMqcdTGiGU+T8JzrxmP1+TNuPaHoxz80hB/2QPSfimZGwayRl3LNTDpzsP1Ka/gQrTBHmRc6uE1DvSKzLXb7VJL6RZb7uKmyoCl91ezS0Lo8VFaGlI7Q0hFcqQlP5lJcK64cywmR2yo4TsirKNDSFDUUpY120eKIuzjJPVJk1yeBhx2TlsFdJ71Arm2g0RAUhCiMasl12r7V7JUK7x4O2zoPXJrW2UeWve9VkCz4TCi31ozDxfTbEXjl2raV+vLSMu5JP8kq4uRD6nsemZCA0l3Vewv9MWAoH9xUuZZnwlVo97j2pff4pvuuxLhrlt1frcB/uro1arU0cxezpNluyyY5isX0PdvU+PxgeL0yfZ7pLx7L4F41jETdNrN4WAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 79.74683544303798%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAQCAYAAAAWGF8bAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACm0lEQVR42q2UWW/TQBRGnUZdCSIlXajYW9E9beI13vcl8ZKkFSniFyLxwgtqSAoCNRT4VR/XrgQEeCni4ejOXPueuTO2hnnz+hXej0cYD4e4eDfEKI+jUTEeEx8uxgWj4TnNz3H56SO+fbn6wVfianKJyWSCz6O3YPq9PqKki7TbQ5xkSLMESZohiDO0ae6HbXhBCMcPYROWF0C3XCi6BUUz0FJ1tHQTsukg9h0wURYjTVO0O22EcRcRiTw/ghZ24YUdqFYAmySngwGS/in6gxfoZD04YQC3ncCJYmSBBz/qoBe5YFZkF1uGin29gbrVxDONw6YqYFdrYkO+zm9rPO40VFQbMipHEo1FHIc9tDoDGLSwZIXYEQzIig5mQXRQkTSsqyJWZQFrqoQ5ycIqxTWthQ1dRFXWsSC6WCRKJC6zOliSWEGCID0haQLeiqDTETA1LURF9LHEebglRlhgKbIWRadgvmFjvmlhqWlS3kCFM7HImhBMF4EfwHEDeF6IgI6nH/lg4u4AR16GHTdFMzlDI4yxbfo4cDzs2T4eKRG2DbfgvhziAfGQeEL5p+pPtowEnB2BOTtJsUmC2aMGqlwDNaGJKs9SRwKWBY46korcbV5A6UACcyCC2eOnKOVxh8NynQWT9Z/jseHT1gTURIFkIlYozuUfQRApx5OYpwUUzB7ntEgsTjGTL0KL3SUHE3k+1nmNEvTioYyZwxaRRwnlulyMS5Qr13MRFewL113+Qi5l9kUsH+dCx8YqqxQvFg/yoj+4Lvhd9FehY1lYmxLenCmha9v/V+iR8B6nFFsrH9IB/wN5XS6u5R/FMOkMmyqYXepwL/8lbk5Rt0sd1kn4suPC0hWIqkw3x81Q6A7QLQOGbUIxDYS2gu+bxBAttW9sgwAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;DataGrip themed how I like it&quot;
-        title=&quot;DataGrip themed how I like it&quot;
+        title=&quot;&quot;
         src=&quot;/static/1c84991752587a82ee2ca991c1db4d95/f058b/datagrip-sqlserver.png&quot;
         srcset=&quot;/static/1c84991752587a82ee2ca991c1db4d95/c26ae/datagrip-sqlserver.png 158w,
 /static/1c84991752587a82ee2ca991c1db4d95/6bdcf/datagrip-sqlserver.png 315w,
@@ -1718,12 +1913,12 @@ LocalDB instance &quot;ProjectsV13&quot; started. &lt;/code&gt;&lt;/pre&gt;&lt;/
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACTUlEQVQ4y52STWsTURSGZ+dGwQ/w57hQUBH/hiux6kbUXam6kO5cKFI/skiq1o0bMaZQsBSKttNiVWI/kmYmmUw+J5PJZDKZufPIvWlskYLigYeXOXfOO+ecO5plmnhOCxEGxANfaRJHIGISESuViGiIiKPfmhyAaAAI+tYO2lp+h7XtMvlyg+9GnXKrS7vdplAoYBgGxWIRy6pyWIgkUbr+bZOnr+YJGjW09OIPUot50svbpL8YfNpq0HU7mKZJ1bJoNps4jkOn06HrurRaLTzPU0bJnmFmocKDOQO/aqAZu0VKhqEKZKHv+wwGA1XU7XaJogghBHEcK+SzVJmTJELg+QHdAYT1EppZ2qVareJ5XVzXpd/vE4ZDbLtGEAyIopjhMFJIszAMaTuO0mEk80PiaIjstWcV0WyrQqvdVt3ILmWHsgNZEMeCf4nx6L40rBgl6vWGMpJjjg0Pvvx3xL6hsVvANMtqbMnYcLSjZG9/glgcQjwmRoxHrlbK1Op1bNtWKEOR8D8R2CU0q2zS6bj0ej06rgsi4m12hSt3nzAxOcPN+yluPUxzZ3p2jwy3pzMqNzH1guv3XnJt8hlXp1L8XNfRPEdeiKv+vVazqb50Y+o52pEzaKcvoZ04P+LUxREnJRdGuaNn0Y6dQzsuzy+z8CGHZjsN2p6P4/l0eoHahb5VZ+bdZ1LvdWazOm9yOq8/rv6Bztz8GnM5nceZLI9mc1R2ttC2V7KY+qLC3limlV8lKG8S2QVCqwC1AjQPobFPY2OJ6tcl2qvz/ALIF6cBdQNpfAAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACUUlEQVR42p2T7WvTUBTGr4igH3SKf48wmIr/kJ/8IKLgfJ1TxKFDbQsKMnE61FYRZAMF54c5N1ZqaZc0L03SNG9Nmya5eTy5nW9DKnjhx7lJOM95zrk3rCW14Hct8OEAPOqLmKUxwFNBxhOKHDwZIiN+xCyJf2OIfIV6E6xab6AqaZBNB03dhukG8DwPkiRBURTIsgxd1/G3lWWZiJKs4NHiO4QdE6y0vIkHy1UUP9RR/CTjbdWAT4JyS4amqjAMA5ZliSK+78NxHARB8Ifg0xUVp+e34OkaWKPRxLemBKPThWF34fo9RFEkknOROI6pY44kSYhUxDRNhdhIMEPXG0D3MsQ2CaryNrWkIewFCHwPg34fMSWZ5GowiCiZ7wiNiOMEruNS0aHYDwmeJqMZmi2wtqbCtm3hyHVdhGEoHPRJOBcYN7vdz/1cUKVZ5W5yoXw2I0GOXTnj109BBay13RSnaZomDCIXTMhhLprS7ET8F9QJz1s28pZVBe22AU3TCJUEe+IQ/sfhIHeoKTLNzhPOfD8Ql/r9ag1nZ5/g4p0FXJl/gdnCa9wqlXGTELFYFu8u31ui70u4dHcRF+aeo/Z1Hczvduje+YQLu2OLStMzj8H2HcPeo6fAJo6DHSKOnPzFYWLiBNj+SbADk9hzcIr2Uyg/ewVmORacoCfunxuE4BnHx/Umzs29xPT9Cq4+rGCmWMG1QllwvVDZiWXcKL0RnL+9gDPUkXBY31iBWl2DuvUFZn0TrlxD1NExpEIR/eOpZwG98bRra5A2PsOrruI7bJ6oqrwckMQAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot;
-        title=&quot;The Docker Settings window showing the shared drive and the C drive ticked&quot;
+        title=&quot;&quot;
         src=&quot;/static/0b2d1cc0bf13b1d7b892daaa9809fe6b/f058b/docker-settings-share-drive.png&quot;
         srcset=&quot;/static/0b2d1cc0bf13b1d7b892daaa9809fe6b/c26ae/docker-settings-share-drive.png 158w,
 /static/0b2d1cc0bf13b1d7b892daaa9809fe6b/6bdcf/docker-settings-share-drive.png 315w,
@@ -1754,12 +1949,12 @@ LocalDB instance &quot;ProjectsV13&quot; started. &lt;/code&gt;&lt;/pre&gt;&lt;/
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 60.75949367088608%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAMCAYAAABiDJ37AAAACXBIWXMAAB2HAAAdhwGP5fFlAAABmUlEQVQoz41S2Y7bMAz0/39YX9uXomjSBRI7tmVZt+Tb0hQUkqwTFNgSGFAcUENSVMFZC8E79NJiX1cgRsR9Q9zu2N+wfXrEHUgRiBviOiOuC4rvH1f8/LjidNMw1uFa3cCFhDYWShsIpSHvnvDgtLWoGobzpUbFFMpWomISxY334GbAukVIrXE6n6GkeEIrCdFztE2dYykFnDWYxoDztca3H7/x69LhT2NwKgWKOXg8LAwDfAiYpgkrjf+F2RByEW8NgJS5Inj3TBjHEdM0Y1kW7Pv+paCyBrzvwXmPZVmRUkIxHASdc6jKEoy14Jzn8ZSUUEpB0ehCwBiNcRxyccEZeNflBsj+IWhRlhdoLWG0yuAdQ32r0LE2x9YoOGfgvUPHajRNjXme8/0Y46sgVX0flaqmmLI/cmRSO/gwPDm6+yJojAFrG3hnYY3O26SuOtbkbVNsLfEPOMSYPgu/j0zbpbaPCYRt2zN/5Ag0akrEHwTHw7chwf0u+D82z8vLU+Rvo6XAvCy5mvc+vyOdSfwrhBByLm35gb/q26IMOX3T1AAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 60.75949367088608%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAMCAYAAABiDJ37AAAACXBIWXMAAB2HAAAdhwGP5fFlAAABiklEQVR42pVSa2+DMAzk//+2qZ8qdVsppWxAIAkJb8rr5oQWdV21bpaOOJZ99sU4PGHgPAETGsPQY54mTONwg3E959VfME8j6ANM5APoRAhnczhhewjgxTmUzuH5J6RcQCoFkWXgUkJIOinGhVxjSmt4pxDbPdWGKTymsd/t4CSUoKoO4zSDqwze0UOuFRT5mkiLXEMRAU8TGzexuirRdw3cIMbL9gD3gyOQHdzXdzhNXeFqdV1btG2LfhjwzFRRIJMchc7svZOMCKvvhF3X4Xw+Y6T3emaCVKScQwgOk93eE2p6F98/Io4jJHZZqYUpMEhJdpZJVCS5JmWcxUiTxA7wcMKCJDAWUUGOqixQEiRJYtTAEJaXWF2XaJqKyCLKj1fCVsT3khv0fW/9eZ4tJvMbXXCNGVjJGZE3jcm294ZH95IVdWXLdEVuYTZrptb0XtfYirJcyC8Nfkg22zWT3NqSP69T3JpZ4L8Jf7OHhNzboYhPyCMfMnChw6P1/wL16dnaklDRQuTbBl+x6J1tg6O+GAAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;The Hyper-V manager with one VM running&quot;
-        title=&quot;The Hyper-V manager with one VM running&quot;
+        title=&quot;&quot;
         src=&quot;/static/1533b470897f6f55826751f12491ab25/f058b/hyper-v-docker.png&quot;
         srcset=&quot;/static/1533b470897f6f55826751f12491ab25/c26ae/hyper-v-docker.png 158w,
 /static/1533b470897f6f55826751f12491ab25/6bdcf/hyper-v-docker.png 315w,
@@ -1791,12 +1986,12 @@ LocalDB instance &quot;ProjectsV13&quot; started. &lt;/code&gt;&lt;/pre&gt;&lt;/
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAABw0lEQVQ4y42Ti27aMBSG8/7PRrspAUbT0ULsOI5zsx07LeLyT+cMaMuoNEu/TmTH37k6MXKDUmxhqhK6FKikhFYlulqjVpL3Wl1hNwXW/n3CYff2RbRHZ8ENSOT2Fa+bDcpSoe16FPWAIbxjmiaEEBHjhBAj/DjCeY+q0hBCQkoJIc9WCGit+TyhyBaLBfq+x3K5RNsYGFMjxgicTjgejyxau90O8yzFz8dHZFmGNE0xzzJkacoMVSok0VsUQuBwOOA5f0YIAbPZDMYYhpxOJ9YFuN4q5C8CbdtyEBd1XcdiIP3+OYqqquC9vwtse4t+cLDW3lUyeXe9eLsue5+Bw9DDDgOGb/QFeKt7ETrnOHoSff8DpJS/A97CL+WQ5+7Wdc3gLym/jR7/u/b7PTeOOkzK85yh1IxrhH1TwzkPT6k4ixhGTDH+ncEQuOvjOLKlFJVSPLNk1+v1GWoYRt1O6DWQt4cfKR6yHPN8g61Q0FUFpQ20aXhEmrZlSxcJfKklOaNUrxHatuGwi0JAlAqFKHku+QXoDlXTny/Y+53l2rmrk4+U/Tlt/9FFKoEj2M2sEcjagZ08vRT49XuD1WqFp9UKfwDn7NwwXSSCowAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 65.18987341772153%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAANCAYAAACpUE5eAAAACXBIWXMAAB2HAAAdhwGP5fFlAAACAklEQVR42oWTaY6jMBCFuf9p5gTzd6TekwATmog9Zjc2O+kkb8ruZJaejrqkpzLIfK5yPYxiH4ElMcqMoUgZUpYiz1LwMkeh3mV7WheYxx7LNOBtmXBcZp2v6wO9P7wd0XgWjMj34AcB9oyhrGokuUA/HTBNE4ZxfNcwoOt7yLZFHMcIaH8QhL+z73nISo7as2FkLIFl22iaBuv1CkJw7JME8zzjY6hDVs/PWL28wNyYWpZlUV5j6+6QWI8wOtmAUZvLssCjk9q2w93dPYGFhpzP/wJ3UQqPJEQDKaTeJ6gY0Y8o3A2Mqe/05tP5pLMCl2WpP/4YqmreEEC2f2AXoBxGlDu6w2noL5Wc8VUooK7mCvob2Cug+TnwFlwBpZTouk5Lrf8HXls+nTTollSMdA0xDSyKIoRhiDzPNfjLCm+FulfHcWBbNkzThOu6NFCGuqpoKAMNhYA1GbjmHFyrRtu16Mlzync9rVvynryoofayLNNK0xS+72tnlGR80Q3IX2nKWRJpbz08rfCw3mKz9RGEMdg+QcJy+rhARVNXqquS2uM0YaHVtVIfKqkQScBS2UadXImWnF4jrxuklFlRUeZgnDbJAe0wkS0mbQ11V0riIt6NaFr6i+YjSt+BofquQxdc6xU8ct9Fz03ooA4cVP7nKjwH1tM97EfSww/8/P4NvwCzlNhaNBP7AQAAAABJRU5ErkJggg==&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Creating a new ASP.NET Core project with docker support&quot;
-        title=&quot;Creating a new ASP.NET Core project with docker support&quot;
+        title=&quot;&quot;
         src=&quot;/static/f1a727cee004332a2abe8b85d52fc77d/f058b/aspnet-core-with-docker.png&quot;
         srcset=&quot;/static/f1a727cee004332a2abe8b85d52fc77d/c26ae/aspnet-core-with-docker.png 158w,
 /static/f1a727cee004332a2abe8b85d52fc77d/6bdcf/aspnet-core-with-docker.png 315w,
@@ -1828,12 +2023,12 @@ LocalDB instance &quot;ProjectsV13&quot; started. &lt;/code&gt;&lt;/pre&gt;&lt;/
   &gt;
     &lt;span
     class=&quot;gatsby-resp-image-background-image&quot;
-    style=&quot;padding-bottom: 44.93670886075949%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAJCAYAAAAywQxIAAAACXBIWXMAAB2HAAAdhwGP5fFlAAABN0lEQVQoz52R2W6DQAxF+dT+Zb+hT5GqZgOFpTMwgSSFUGAWllNB2r5UVRdLR5avLcu69oo44CjihVwkZHHIKRUMuqHvXr8wfKO5tqaUB7yuLtF2QBuDsXbJ1jn+E6Yu8SbXw1QxjT3WWozRmHn5O23bLmh906016K6jaRq07ui6mZZhHBm7Gm+0PXVyR3u+xw8yNpsndrsdvu+zXq/Z7/cEQUAURey2WzabLYfDgTAMbz3fX/qn84XJNHizV/QCpwtkqsiPCiEEUkqEkKj3WqnjokmZUhQFl/OZPM/JsmypXT8wtMuF+mdzpt95uCw0TY3rHc5ZnHN/Yn6etnPuMW5AXy94L7mirK6UZfknqqrCTxSrtc/D6onHICGJYryXQlFdr59Dv+FjVh5PhM8pQZQQpzlKPPMGunSvsVEQtwEAAAAASUVORK5CYII=&apos;); background-size: cover; display: block;&quot;
+    style=&quot;padding-bottom: 44.93670886075949%; position: relative; bottom: 0; left: 0; background-image: url(&apos;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAJCAYAAAAywQxIAAAACXBIWXMAAB2HAAAdhwGP5fFlAAABR0lEQVR42p2Q627aQBCF/ah5x75EI1VFhdhgG7KBEl9xDPZefP+yJrR/EkVNR/p0Zs/OSKPjpCIkOjwRHwSJ1WexIzv+Zmw0g1H/TKcl5VHgNLKiGya6vv9LPwz8T3XyjDO2HVO/Z+hqlNLUdY2UEq3VVauqoq7evBml3vza+tLOXuct8yGjrnGmtqc+3KFP3/CDCM99YLNe4/sbVqsV/sYnCAKEEHieh+u6bLc7xOMj6/nP9wmDkPxUQKNwhkbCdKZvLyRJSp5nxHFs+/iq8zuKIrI0u3kJhV0uy5KT1TRNKYqCfhwZ5gvn8P/UNE0fh2P96bPwbnuDrnBM9ULbNrSNeY8xH/s3jNZIm6nSBmUaVJnjnF8KLspwkfpLVHYnjAoWwZ7vS5+lSNgfI5xs/ZN855Fv3S9z8H6xW/4gXNwjHhYcl/e8AjyKrHPj6HkwAAAAAElFTkSuQmCC&apos;); background-size: cover; display: block;&quot;
   &gt;&lt;/span&gt;
   &lt;img
         class=&quot;gatsby-resp-image-image&quot;
         alt=&quot;Process exited without raising a CoreCLR started event&quot;
-        title=&quot;Process exited without raising a CoreCLR started event&quot;
+        title=&quot;&quot;
         src=&quot;/static/f16cc92492103016b7cb0bf67e563ca4/f058b/netcore-did-not-start.png&quot;
         srcset=&quot;/static/f16cc92492103016b7cb0bf67e563ca4/c26ae/netcore-did-not-start.png 158w,
 /static/f16cc92492103016b7cb0bf67e563ca4/6bdcf/netcore-did-not-start.png 315w,
