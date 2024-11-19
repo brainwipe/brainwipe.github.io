@@ -137,7 +137,7 @@ We're now going to create the CodeBuild project, which will use your `dockerfile
 
 - For the `project name`, use `build-myapp` because it will be easier to differentiate it
 - Select Managed Image (see below)
-- Create a new Service Role
+- Create a new Service Role (see below for permissions)
 - Use a buildspec file - the individual build commands 
 - Put in the path to your buildspec file, if the repo has multiple containers in it then you will need one buildspec for each container
 - Click continue to CodePipeline to go back
@@ -148,6 +148,29 @@ We're now going to create the CodeBuild project, which will use your `dockerfile
 ### Managed Docker Image
 
 This bit is a little confusing, so stick with me. This [AWS Managed Image](https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html) is the docker container that will host and run your dockerfile. That means Amazon starts with an Amazon Linux Docker Container that will run up your docker file that will in turn build a "build-env" which then builds your "runtime" container. That runtime container is then put into ECR but we'll come onto that next. 
+
+### Code Build Service Role
+
+While AWS will create a service role for you, it won't necessarily have all the permissions it needs. Once you have build the pipeline, go to IAM and find the CodeBuild service role that you made in this step. 
+
+This policy allows CodeBuild to read your code from GitHub via the Code Connections application. Add a policy with the following:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "codestar-connections:UseConnection",
+            "Resource": "insert code connection ARN here"
+        }
+    ]
+}
+```
+
+You might have spotted the reference to AWS CodeStar. AWS CodeStar is an old name for AWS CodeConnections, [which was renamed in March 2024](https://docs.aws.amazon.com/dtconsole/latest/userguide/rename.html).
+
+Secondly, you must add a policy so that CodeBuild can push the final container to the AWS Elastic Container Registry. I am using `AmazonEC2ContainerRegistryFullAccess` and then I use the IAM Analyse functionality to create custom policy with only the permissions that the service role needs.
 
 ### Buildspec File
 
@@ -220,6 +243,15 @@ If you want to know what all the variables there are, copy and paste the list be
 
 You can pass your own variables into your buildspec, you'll notice that . If you make your own, they cannot begin with `CODEBUILD_` or `AWS_` as they are reserved. The environment variables are not specified in the CodeBuild popup when using CodePipeline (they would be if you were only using CodeBuild), they are specified in the parent window. Do those later!
 
+I needed to add the following environment variables into the build:
+
+- `IMAGE_REPO_NAME` the ECR image name
+- `TagName`
+- `AWS_ACCOUNT_ID`
+- `AWS_DEFAULT_REGION`
+
+They would not be pre-filled by AWS when running CodeBuild through CodePipeline.
+
 #### Pre-Build log-in to AWS ECR
 
 The default CodeBuild container will have AWS toolkit installed on it but it does not automatically have acccess to the ECR, so you need to login. The container runs under the service role you created in the previous step and that will need to have access to the ECR (it did by default when I set it up). It uses that service role to log into the ECR. Strange, I know, but it's how this works.
@@ -249,6 +281,8 @@ The `#{}` tells AWS that it needs to do a replacement. `SourceVariables` is the 
 ```
 
 So I could include any of these Source Variables in my buildspec by adding an environment variable such as `#{SourceVariables.TagName}` or `#{SourceVariables.CommitId}`. This could be useful if you want to tag your ECR image with both the tag and the commit id.
+
+> Warning: when using TagName, it will only appear on the image if you push to git. If you then request a future build through the AWS Console, the git tag will not be there.
 
 ## Final Thoughts
 
