@@ -15,7 +15,7 @@ I'm a practitioner, not an expert. If you know a better way, then go for it. Som
 You have the following:
 
 - ASP.NET application that runs up in a single container
-- A container that performs you ASP.NET image building
+- A container that performs your ASP.NET image building
 - The application is stored in a private GitHub repository 
 - You have GitHub administrator access over the repository
 - You have AWS permissions to use the CodePipeline and CodeBuild (but likely you'll need more)
