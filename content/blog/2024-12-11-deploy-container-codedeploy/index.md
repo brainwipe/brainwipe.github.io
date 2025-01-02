@@ -10,7 +10,7 @@ I'm a practitioner, not an expert. If you know a better way, then go for it. Som
 
 > You might incur a cost following these instructions
 
-[Part 1 covering build here](/2024-11-24-build-aspnet-codebuild)
+[Part 1 covering build is here](/2024-11-24-build-aspnet-codebuild)
 
 ## Pre-Requisites
 
@@ -18,13 +18,12 @@ I'm a practitioner, not an expert. If you know a better way, then go for it. Som
 - You already have a service running in AWS Elastic Container Service (ECS)
 - It doesn't matter how the service got there - either through the CLI, Console or by Cloud Formation.
 
-
 ## There are 2 different ways to deploy to ECS
 
 1. Amazon ECS
 2. Amazon ECS Blue/Green
 
-While the names are the same, how they deploy is very very different. Amazon ECS goes straight to ECS. Amazon ECS Blue/Green uses AWS Code Deploy. The AWS document does not make this clear.
+While the names are the same, how they deploy is very *very* different. Amazon ECS goes straight to ECS. Amazon ECS Blue/Green uses AWS Code Deploy. The AWS document does not make this clear until your ears-deep in it.
 
 Each deployment is a step in the pipe and you can run both together - deploying a service and an API together but they work very differently!
 
@@ -44,7 +43,9 @@ For Amazon ECS Blue/Green, you use AWS Code Deploy, which needs an "AppSpec" fil
 
 ## Pipeline using Amazon ECS
 
-These are the steps and decisions you have to make to deploy a .NET service on a container in ECS using the standard ECS deployment.
+These are the steps and decisions you have to make to deploy a .NET service on a container in ECS using the standard ECS deployment. 
+
+ECS deployment is perfect for a worker service because you don't necessarily want an old work and a new one running at the same time. You want to stop one, start the new one and the rollback if needed.
 
 Pre-requisites:
 
@@ -56,7 +57,7 @@ Pre-requisites:
 
 ### Steps
 
-This only builds part of the pipeline, we'll add more parts after.
+Due to a restriction with the CodePipeline Console user interface, this only builds part of the pipeline, we'll add more parts after.
 
 - Create a new pipeline
 - Set the pipeline name to a description of what it will be doing, such as deploying a worker.
@@ -82,9 +83,9 @@ The image definition file can have multiple containers in it but in this example
 [{"name":"worker","imageUri":"1234567890.dkr.ecr.eu-west-2.amazonaws.com/mco/worker:test"}]
 ```
 
-Where `name` is the name of the service in ECS we're deploying to and `imageUri` is ECR image locaiton. You'll notice we're using the tag "test" and that won't change. See "You can't specify ECR tag as a Pipeline parameter" below for why.
+Where `name` is the name of the service in ECS we're deploying to and `imageUri` is ECR image location. You'll notice we're using the tag "test" and that **won't change**. Why's that? Check "You can't specify ECR tag as a Pipeline parameter" below.
 
-With that saved in GitHub, go back to the pipeline and hit edit.
+With that saved in your new infrastructure repo in GitHub, go back to the pipeline and hit edit.
 
 - In Source, click Edit stage
 - Click `+ Add Action Group`
@@ -201,9 +202,9 @@ In the Task Definition, there will be a place to define the ECR image that will 
 
 - Edit your pipeline
 - In the deploy stage, edit the Blue/Green deployment
-- Under `Dynamically update task definition image`, choose the SourceArtifact
+- Under `Dynamically update task definition image`, choose the Source Artifact
 - Set the placeholder text to `IMAGE_NAME` (remove the angle brackets)
-- DOne
+- Done
 
 ### Code Deploy AppSpec
 
@@ -229,11 +230,13 @@ The [AppSpec file](https://docs.aws.amazon.com/codedeploy/latest/userguide/refer
 }
 ```
 
-The task definition is included as `<TASK_DEFINITION>` because it will be replaced by the specific versioned URN of the task definition by Code Deploy.
+The task definition is `<TASK_DEFINITION>` because it will be replaced by the specific versioned URN of the task definition by Code Deploy. You can hardcode the task definition but leave off the version number at the end and it will always take the latest one. This isn't recommended because you often want to deploy a specific version and task definition version gets incremented with every ECS deployment.
 
 - Edit your pipeline
 - Edit the Deploy definition and set AppSpec to your wherever you put your appspec.
 - Click done
+
+Your pipeline should now work!
 
 ## Things you can't do
 
