@@ -3,6 +3,8 @@ Built on Gatsby. Here's the basics.
 
 ## Develop
 
+When working locally:
+
 ```powershell
 npm run develop
 ```
@@ -12,9 +14,13 @@ Graph data is on [localhost:8000/___graphql](http://localhost:8000/___graphql) [
 
 ## Deploy
 
+When ready to get onto github:
+
 ```powershell
 npm run deploy
 ```
+
+It'll publish to github automatically but you have to commit+push the source yourself.
 
 ## Links
 
