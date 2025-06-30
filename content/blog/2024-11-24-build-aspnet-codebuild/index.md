@@ -172,6 +172,8 @@ You might have spotted the reference to AWS CodeStar. AWS CodeStar is an old nam
 
 Secondly, you must add a policy so that CodeBuild can push the final container to the AWS Elastic Container Registry. I am using `AmazonEC2ContainerRegistryFullAccess` and then I use the IAM Analyse functionality to create custom policy with only the permissions that the service role needs.
 
+The CodeBuild error `CLIENT_ERROR: authorization failed for primary source and source version` is what you get when you miss this step.
+
 ### Buildspec File
 
 The `buildspec` file does the heavy lifting of the build process. It's split into three sections, we'll look at each below. Don't forget that these commands are running inside a docker container shell and because we've chosen the default Amazon Linux shell, it has pre-loaded utilities on it. If you want to use a custom one, chances are you'll need to install those things using linux-like commands.
