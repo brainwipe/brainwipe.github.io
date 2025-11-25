@@ -200,7 +200,19 @@ public class PgpEncryption()
 		var inputBytes = Encoding.UTF8.GetBytes(input);
 		var cipher = new Pkcs1Encoding(new RsaEngine());
 		cipher.Init(true, LoadPgpPublicKey(publicKey));
-		return Convert.ToBase64String(cipher.ProcessBlock(inputBytes, 0, inputBytes.Length));
+		int blockSize = cipher.GetInputBlockSize();
+		var output = new List<byte>();
+		for (int chunkPosition = 0; chunkPosition < inputBytes.Length; chunkPosition += blockSize)
+		{
+			var chunkSize = blockSize;
+			if (chunkPosition + blockSize > inputBytes.Length)
+			{
+				chunkSize = inputBytes.Length - chunkPosition;
+			}
+			output.AddRange(cipher.ProcessBlock(inputBytes, chunkPosition, chunkSize));
+		}
+		
+		return Convert.ToBase64String(output.ToArray());
 	}
 
 	public string Decrypt(string encrypted, string privateKey, string passKey)
@@ -208,8 +220,19 @@ public class PgpEncryption()
 		var encryptedBytes = Convert.FromBase64String(encrypted);
 		var cipher = new Pkcs1Encoding(new RsaEngine());
 		cipher.Init(false, LoadPgpPrivateKey(privateKey, passKey));
-		var decryptedBytes = cipher.ProcessBlock(encryptedBytes, 0, encryptedBytes.Length);
-		return Encoding.UTF8.GetString(decryptedBytes);
+		int blockSize = cipher.GetInputBlockSize();
+		var decryptedBytes = new List<byte>();
+		for (int chunkPosition = 0; chunkPosition < encryptedBytes.Length; chunkPosition += blockSize)
+		{
+			var chunkSize = blockSize;
+			if (chunkPosition + blockSize > encryptedBytes.Length)
+			{
+				chunkSize = encryptedBytes.Length - chunkPosition;
+			}
+
+			decryptedBytes.AddRange(cipher.ProcessBlock(encryptedBytes, chunkPosition, chunkSize));
+		}
+		return Encoding.UTF8.GetString(decryptedBytes.ToArray());
 	}
 
 	private static ICipherParameters LoadPgpPublicKey(string armoredKeyString)
