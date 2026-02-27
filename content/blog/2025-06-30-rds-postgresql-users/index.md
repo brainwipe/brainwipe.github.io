@@ -19,7 +19,7 @@ GRANT rdsadmin TO super_user;
 GRANT from_user TO super_user;
 GRANT to_user TO super_user;
 
-REASSIGN OWNED BY from_user TO staging_teto_usernant_user;
+REASSIGN OWNED BY from_user TO to_user;
 
 DROP ROLE from_user;
 ```
