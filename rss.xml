@@ -1,4 +1,63 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Neuron RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Fri, 27 Feb 2026 15:37:07 GMT</lastBuildDate><item><title><![CDATA[PGP in .NET with GnuPG and Bouncy Castle]]></title><description><![CDATA[In this blog we are going to encrypt and decrypt some text using PGP. Keys will be asymmetric and made by GnuPG (GPG) but the act of encrypt…]]></description><link>https://brainwipe.github.io/2025-11-19-gpg-in-dotnet/</link><guid isPermaLink="false">https://brainwipe.github.io/2025-11-19-gpg-in-dotnet/</guid><pubDate>Wed, 19 Nov 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;In this blog we are going to encrypt and decrypt some text using PGP. Keys will be asymmetric and made by &lt;a href=&quot;https://www.gnupg.org/&quot;&gt;GnuPG (GPG)&lt;/a&gt; but the act of encrypt and decrypt will be a .NET method using C# .NET &lt;a href=&quot;https://www.bouncycastle.org/&quot;&gt;Bouncy Castle&lt;/a&gt;. We’re doing this on Windows using the &lt;a href=&quot;https://learn.microsoft.com/en-us/windows/wsl/install&quot;&gt;Ubuntu WSL2&lt;/a&gt; in &lt;a href=&quot;https://github.com/microsoft/terminal&quot;&gt;Windows Terminal&lt;/a&gt; for GPG, because it already has everything installed.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Rob Lang's Neuron RSS Feed]]></title><description><![CDATA[Mostly an aide memoire for future-me to remember how I solved various problems.]]></description><link>https://brainwipe.github.io</link><generator>GatsbyJS</generator><lastBuildDate>Fri, 20 Mar 2026 11:46:25 GMT</lastBuildDate><item><title><![CDATA[Docker Desktop pull fails on Windows 11 Pro]]></title><description><![CDATA[If Docker desktop fails to pull like: or Then Windows settings Network and internet Find the network adapter you’re using (LAN or Wifi) By…]]></description><link>https://brainwipe.github.io/2026-03-20-ipv6-docker-pull/</link><guid isPermaLink="false">https://brainwipe.github.io/2026-03-20-ipv6-docker-pull/</guid><pubDate>Fri, 20 Mar 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;If Docker desktop fails to pull like:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;&gt; docker pull mcr.microsoft.com/dotnet/aspnet:10.0
+Error response from daemon: failed to resolve reference &quot;mcr.microsoft.com/dotnet/aspnet:10.0&quot;: failed to do request: Head &quot;https://mcr.microsoft.com/v2/dotnet/aspnet/manifests/10.0&quot;: EOF&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;or&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;&gt; docker pull public.ecr.aws/docker/library/node:21-alpine3.17
+21-alpine3.17: Pulling from docker/library/node failed to copy: httpReadSeeker: failed open: failed to do request: Get [snip hash]&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Then&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows settings&lt;/li&gt;
+&lt;li&gt;Network and internet&lt;/li&gt;
+&lt;li&gt;Find the network adapter you’re using (LAN or Wifi)&lt;/li&gt;
+&lt;li&gt;By “More Adapter Options” click “Edit”&lt;/li&gt;
+&lt;li&gt;Enter admin password or confirm user access control&lt;/li&gt;
+&lt;li&gt;In the Properties window, scroll down to “Internet Protocol Version 6 (TCP/IPv6)” and uncheck.&lt;/li&gt;
+&lt;li&gt;Click OK&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Then try again and it will work. The docker Hello World pull will work, so it’s not all registries.&lt;/p&gt;
+&lt;h2&gt;Investigation Detail&lt;/h2&gt;
+&lt;p&gt;Windows appears to be preferring ipv6 over ipv4 and when Docker Desktop does a pull, it will not fall back to ipv4 if the ipv6 is not available, it just fails.&lt;/p&gt;
+&lt;p&gt;The Microsoft and AWS endpoints have slightly different issues but the solution is the same.&lt;/p&gt;
+&lt;h3&gt;Microsoft Container Registry&lt;/h3&gt;
+&lt;p&gt;As &lt;a href=&quot;https://github.com/microsoft/containerregistry/issues/165&quot;&gt;others have reported&lt;/a&gt;, downgrading to Docker Desktop 4.32.0 (157355) also works. However, our organisation has NCSC Cyber Essentials Plus and we cannot run with outdated software, the downgrade was not an option.&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;language-text&quot;&gt;nslookup&lt;/code&gt; for the Microsoft Container Registry comes back fine, as does &lt;code class=&quot;language-text&quot;&gt;curl&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;nslookup mcr.microsoft.com
+Server:  UnKnown
+Address:  192.168.4.1
+
+Non-authoritative answer:
+Name:    mcr-0001.mcr-msedge.net
+Addresses:  2603:1061:f:101::10
+          2603:1061:f:100::10
+          150.171.69.10
+          150.171.70.10
+Aliases:  mcr.microsoft.com
+          mcr.trafficmanager.net&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;code class=&quot;language-text&quot;&gt;192.168.4.1&lt;/code&gt; is my Amazon eero gateway router and it acts as a pass through to the WAN. Internally, its DNS is set to &lt;code class=&quot;language-text&quot;&gt;8.8.8.8&lt;/code&gt;, &lt;code class=&quot;language-text&quot;&gt;1.1.1.1&lt;/code&gt;, which is only IPv4 but that should still work. &lt;a href=&quot;https://support.eero.com/hc/en-us/articles/115005975026-What-is-IPv6&quot;&gt;eero supports ipv6&lt;/a&gt; and before turning off ipv6 &lt;code class=&quot;language-text&quot;&gt;tracert&lt;/code&gt; to an ipv6 address works.&lt;/p&gt;
+&lt;h3&gt;AWS ECR&lt;/h3&gt;
+&lt;p&gt;AWS recommends that you use images on the &lt;a href=&quot;https://gallery.ecr.aws/&quot;&gt;AWS Public Elastic Container Registry (ECR)&lt;/a&gt; to keep costs down. In this case, the &lt;code class=&quot;language-text&quot;&gt;nslookup&lt;/code&gt; is:&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;nslookup public.ecr.aws
+Server:  UnKnown
+Address:  192.168.4.1
+
+Non-authoritative answer:
+Name:    a961edf72200aa9b1.awsglobalaccelerator.com
+Addresses:  99.83.145.10
+          75.2.101.78
+Aliases:  public.ecr.aws&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;There’s no ipv6 at all! Confused, I tried forcing my ipv6 settings to use the Google IPv6 DNS servers &lt;code class=&quot;language-text&quot;&gt;2001:4860:4860::8888&lt;/code&gt; and &lt;code class=&quot;language-text&quot;&gt;2001:4860:4860::8844&lt;/code&gt;, &lt;code class=&quot;language-text&quot;&gt;nslookup&lt;/code&gt; came back the same (this time using Google’s DNS directly):&lt;/p&gt;
+&lt;div class=&quot;gatsby-highlight&quot; data-language=&quot;text&quot;&gt;&lt;pre class=&quot;language-text&quot;&gt;&lt;code class=&quot;language-text&quot;&gt;nslookup public.ecr.aws
+Server:  dns.google
+Address:  2001:4860:4860::8888
+
+Non-authoritative answer:
+Name:    a961edf72200aa9b1.awsglobalaccelerator.com
+Addresses:  99.83.145.10
+          75.2.101.78
+Aliases:  public.ecr.aws&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;There’s no difference between forcing the DNS to use Google from my PC and the router doing the same anyway.&lt;/p&gt;
+&lt;h2&gt;This has been a change in the last year&lt;/h2&gt;
+&lt;p&gt;When I was last working with these Docker containers, it all worked without these issues. It is a new problem in the last year or so.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[PGP in .NET with GnuPG and Bouncy Castle]]></title><description><![CDATA[In this blog we are going to encrypt and decrypt some text using PGP. Keys will be asymmetric and made by GnuPG (GPG) but the act of encrypt…]]></description><link>https://brainwipe.github.io/2025-11-19-gpg-in-dotnet/</link><guid isPermaLink="false">https://brainwipe.github.io/2025-11-19-gpg-in-dotnet/</guid><pubDate>Wed, 19 Nov 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;In this blog we are going to encrypt and decrypt some text using PGP. Keys will be asymmetric and made by &lt;a href=&quot;https://www.gnupg.org/&quot;&gt;GnuPG (GPG)&lt;/a&gt; but the act of encrypt and decrypt will be a .NET method using C# .NET &lt;a href=&quot;https://www.bouncycastle.org/&quot;&gt;Bouncy Castle&lt;/a&gt;. We’re doing this on Windows using the &lt;a href=&quot;https://learn.microsoft.com/en-us/windows/wsl/install&quot;&gt;Ubuntu WSL2&lt;/a&gt; in &lt;a href=&quot;https://github.com/microsoft/terminal&quot;&gt;Windows Terminal&lt;/a&gt; for GPG, because it already has everything installed.&lt;/p&gt;
 &lt;blockquote&gt;
 &lt;p&gt;Code is offered under GPL without warranty.&lt;/p&gt;
 &lt;/blockquote&gt;
